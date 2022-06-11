@@ -50,7 +50,6 @@ type (
 func (as *ACMEServer) ServePacket(p net.PacketConn, challenge acme.Challenge) error {
 	fmt.Println("ACMEServer Starting to serve UDP!!!!!!!!!")
 	as.m.Lock()
-	fmt.Println("Still ACMEServer Starting to serve UDP!!!!!!!!!")
 	as.server = &dns.Server{PacketConn: p, Net: "udp", Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
 		acme_request := true
 		fmt.Println("ACMEHandler Handling DNS Challenge UDP!!!!")
@@ -97,7 +96,7 @@ func (d DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error 
 	d.DNS = as
 
 	addr := net.UDPAddr{
-		Port: 53,
+		Port: 1053,
 		IP:   net.ParseIP("0.0.0.0"),
 	}
 

@@ -1,6 +1,7 @@
 package tls
 
 import (
+	"context"
 	ctls "crypto/tls"
 	"fmt"
 
@@ -19,6 +20,40 @@ func setup(c *caddy.Controller) error {
 		return plugin.Error("tls", err)
 	}
 	return nil
+}
+
+type ACMEManager struct {
+    Config *certmagic.Config
+    Issuer *certmagic.ACMEIssuer
+    Zone string
+}
+
+func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
+    fmt.Println("Start of NewACMEManager")
+    acmeIssuerTemplate := certmagic.ACMEIssuer{
+        Agreed:                  true,
+        DisableHTTPChallenge:    true,
+        DisableTLSALPNChallenge: true,
+    }
+    acmeIssuerTemplate.TestCA = "https://localhost:14000/dir" //pebble
+    acmeIssuerTemplate.CA = "https://localhost:14000/dir"
+    acmeConfigTemplate := NewCertmagicConfig(config)
+    cache := certmagic.NewCache(certmagic.CacheOptions{
+        GetConfigForCert: func(cert certmagic.Certificate) (*certmagic.Config, error) {
+            return acmeConfigTemplate, nil
+        },
+    })
+    acmeConfig := certmagic.New(cache, *acmeConfigTemplate)
+    acmeIssuer := certmagic.NewACMEIssuer(acmeConfig, acmeIssuerTemplate)
+
+    fmt.Println("End of NewACMEManager")
+    return &ACMEManager{
+        Config: acmeConfig,
+        Issuer: acmeIssuer,
+        Zone: zone,
+    }
+
+
 }
 
 func parseTLS(c *caddy.Controller) error {
@@ -43,11 +78,10 @@ func parseTLS(c *caddy.Controller) error {
 			// first check if a certificate is already present
 			fmt.Println("Starting ACME")
 
-			acmeTemplate := certmagic.ACMEIssuer{
-				Agreed:                  true,
-				DisableHTTPChallenge:    true,
-				DisableTLSALPNChallenge: true,
-			}
+
+
+
+            ctx := context.Background()
 
 			var domainNameACME string
 			for c.NextBlock() {
@@ -67,7 +101,12 @@ func parseTLS(c *caddy.Controller) error {
 				}
 			}
 
-			acmeTemplate.TestCA = "https://localhost:14000/dir" //pebble
+            manager := NewACMEManager(config, domainNameACME)
+            err := manager.Config.ObtainCertSync(ctx, manager.Zone)
+            if err != nil {
+                return c.Errf("failed to Obtain Cert '%v'", err)
+            }
+
 
 			fmt.Println("End of ACME config parsing")
 		} else {
