@@ -22,7 +22,7 @@ func setup(c *caddy.Controller) error {
 }
 
 func parseTLS(c *caddy.Controller) error {
-    fmt.Println("Start of parseTLS")
+	fmt.Println("Start of parseTLS")
 	config := dnsserver.GetConfig(c)
 	var tlsconf *ctls.Config
 	var err error
@@ -43,18 +43,16 @@ func parseTLS(c *caddy.Controller) error {
 			// first check if a certificate is already present
 			fmt.Println("Starting ACME")
 
-
-
-            acmeTemplate := certmagic.ACMEIssuer{
-                Agreed: true,
-                DisableHTTPChallenge: true,
-                DisableTLSALPNChallenge: true,
-            }
+			acmeTemplate := certmagic.ACMEIssuer{
+				Agreed:                  true,
+				DisableHTTPChallenge:    true,
+				DisableTLSALPNChallenge: true,
+			}
 
 			var domainNameACME string
 			for c.NextBlock() {
 				fmt.Println("ACME Config Block Found")
-                token := c.Val()
+				token := c.Val()
 				switch token {
 				case "domain":
 					fmt.Println("Found Keyword Domain")
@@ -64,12 +62,12 @@ func parseTLS(c *caddy.Controller) error {
 					}
 					domainNameACME = domainArgs[0]
 					fmt.Println(domainNameACME)
-                default:
-                    return c.Errf("unknown argument to acme '%s'", token)
+				default:
+					return c.Errf("unknown argument to acme '%s'", token)
 				}
 			}
 
-            acmeTemplate.TestCA = "https://localhost:14000/dir" //pebble
+			acmeTemplate.TestCA = "https://localhost:14000/dir" //pebble
 
 			fmt.Println("End of ACME config parsing")
 		} else {
@@ -106,7 +104,7 @@ func parseTLS(c *caddy.Controller) error {
 			if err != nil {
 				return err
 			}
-            configureTLS(config, tlsconf, clientAuth)
+			configureTLS(config, tlsconf, clientAuth)
 		}
 	}
 	return nil

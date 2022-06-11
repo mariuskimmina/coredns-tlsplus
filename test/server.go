@@ -5,8 +5,8 @@ import (
 
 	"github.com/coredns/caddy"
 	_ "github.com/coredns/coredns/core" // Hook in CoreDNS.
-    "github.com/coredns/coredns/core/dnsserver"
-    _ "github.com/mariuskimmina/coredns-tlsplus/test/plugin" // Load all plugins in github.com/coredns/coredns but replace tls with tlsplus
+	"github.com/coredns/coredns/core/dnsserver"
+	_ "github.com/mariuskimmina/coredns-tlsplus/test/plugin" // Load all plugins in github.com/coredns/coredns but replace tls with tlsplus
 )
 
 var mu sync.Mutex

@@ -16,7 +16,7 @@ func TestTLS(t *testing.T) {
 		expectedRoot       string // expected root, set to the controller. Empty for negative cases.
 		expectedErrContent string // substring from the expected error. Empty for positive cases.
 	}{
-        // regular tls
+		// regular tls
 		// positive
 		{"tls test_cert.pem test_key.pem test_ca.pem", false, "", ""},
 		{"tls test_cert.pem test_key.pem test_ca.pem {\nclient_auth nocert\n}", false, "", ""},
@@ -32,10 +32,10 @@ func TestTLS(t *testing.T) {
 		{"tls test_cert.pem test_key.pem test_ca.pem {\nclient_auth none bogus\n}", true, "", "Wrong argument"},
 		{"tls test_cert.pem test_key.pem test_ca.pem {\nclient_auth bogus\n}", true, "", "unknown authentication type"},
 
-        // acme
-        // positive
+		// acme
+		// positive
 		{"tls acme {\ndomain example.com\n}", false, "", ""},
-        // negative
+		// negative
 		{"tls acme {\nunknown\n}", true, "", "unknown argument to acme"},
 	}
 

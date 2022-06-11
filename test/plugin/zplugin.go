@@ -49,8 +49,8 @@ import (
 	_ "github.com/coredns/coredns/plugin/secondary"
 	_ "github.com/coredns/coredns/plugin/sign"
 	_ "github.com/coredns/coredns/plugin/template"
-	_ "github.com/mariuskimmina/coredns-tlsplus"
 	_ "github.com/coredns/coredns/plugin/trace"
 	_ "github.com/coredns/coredns/plugin/transfer"
 	_ "github.com/coredns/coredns/plugin/whoami"
+	_ "github.com/mariuskimmina/coredns-tlsplus"
 )

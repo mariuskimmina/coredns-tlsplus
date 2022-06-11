@@ -8,18 +8,18 @@ import (
 )
 
 func TestNewCertmagicConfig(t *testing.T) {
-    var testTable = []struct {
-        name string
-    }{
-        {
-            name: "Happy TestCase",
-        },
-    }
+	var testTable = []struct {
+		name string
+	}{
+		{
+			name: "Happy TestCase",
+		},
+	}
 
-    for _, e := range testTable {
-        fmt.Println(e.name)
-        config := &dnsserver.Config{}
-        certmagicConfig := NewCertmagicConfig(config)
-        fmt.Println(certmagicConfig)
-    }
+	for _, e := range testTable {
+		fmt.Println(e.name)
+		config := &dnsserver.Config{}
+		certmagicConfig := NewCertmagicConfig(config)
+		fmt.Println(certmagicConfig)
+	}
 }
