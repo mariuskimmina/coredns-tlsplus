@@ -3,8 +3,6 @@ package tls
 import (
 	"fmt"
 	"testing"
-
-	"github.com/coredns/coredns/core/dnsserver"
 )
 
 func TestNewCertmagicConfig(t *testing.T) {
@@ -18,8 +16,7 @@ func TestNewCertmagicConfig(t *testing.T) {
 
 	for _, e := range testTable {
 		fmt.Println(e.name)
-		config := &dnsserver.Config{}
-		certmagicConfig := NewCertmagicConfig(config)
+		certmagicConfig := NewCertmagicConfig()
 		fmt.Println(certmagicConfig)
 	}
 }

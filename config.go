@@ -2,16 +2,10 @@ package tls
 
 import (
 	"github.com/caddyserver/certmagic"
-	"github.com/coredns/coredns/core/dnsserver"
 )
 
-func NewCertmagicConfig(config *dnsserver.Config) *certmagic.Config {
-	solver := DNSSolver{
-		Addr:   "127.0.0.1:53",
-		Config: config,
-	}
-	certmagic.DefaultACME.DNS01Solver = solver
+func NewCertmagicConfig() *certmagic.Config {
 	acmeConfig := certmagic.NewDefault()
-
+    acmeConfig.TLSConfig().InsecureSkipVerify = true
 	return acmeConfig
 }

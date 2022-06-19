@@ -88,7 +88,7 @@ func (as *ACMEServer) ServePacket(p net.PacketConn, challenge acme.Challenge) er
 // for CoreDNS that means that we need to start the DNS Server,
 // serve exactly one request and
 func (d DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error {
-	fmt.Println("Starting to solve the challenge!")
+	fmt.Println("Start of DNSSover Present !")
 	var config []*dnsserver.Config
 	config = append(config, d.Config)
 
@@ -116,11 +116,12 @@ func (d DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error 
 		fmt.Println("ACME DNS Server has been shutdown!")
 	}()
 	fmt.Println("DNS Server should be up")
+	fmt.Println("End of DNSSover Present !")
 	return nil
 }
 
 func (d DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
-	fmt.Println("We Waitin")
+	fmt.Println("Start of DNSSolver Wait")
 	time.Sleep(10 * time.Second)
 	return nil
 }
@@ -130,11 +131,12 @@ func (d DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 // allocated/created during Present. It SHOULD NOT require
 // that Present ran successfully. It MUST return quickly.
 func (d DNSSolver) CleanUp(ctx context.Context, challenge acme.Challenge) error {
-	fmt.Println("Cleaning Up!")
+	fmt.Println("Start of DNSSolver CleanUp!")
 	err := d.DNS.server.Shutdown()
 	if err != nil {
 		fmt.Println("Error shutting down")
 		fmt.Println(err)
 	}
+	fmt.Println("End of DNSSolver CleanUp!")
 	return nil
 }

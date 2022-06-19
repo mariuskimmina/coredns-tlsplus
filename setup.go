@@ -3,7 +3,10 @@ package tls
 import (
 	"context"
 	ctls "crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
+	"os"
 
 	"github.com/caddyserver/certmagic"
 	"github.com/coredns/caddy"
@@ -23,21 +26,62 @@ func setup(c *caddy.Controller) error {
 }
 
 type ACMEManager struct {
-    Config *certmagic.Config
-    Issuer *certmagic.ACMEIssuer
-    Zone string
+    Config *certmagic.Config //Configs for Serving
+    Issuer *certmagic.ACMEIssuer //The ACME Client
+    Zone string //The Domain
 }
 
 func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
     fmt.Println("Start of NewACMEManager")
+
+    certbytes, err := os.ReadFile("test/certs/pebble.minica.pem")
+    if err != nil {
+        fmt.Println(err.Error())
+        panic("Failed to load Cert")
+    }
+    pemcert, _ := pem.Decode(certbytes)
+    if pemcert == nil {
+        fmt.Println("fuck")
+    }
+    fmt.Println(pemcert.Bytes)
+
+    ////chain, err := ctls.LoadX509KeyPair("test/certs/pebble.minica.pem", "test/certs/pebble.minica.key.pem")
+
+    cert, err := x509.ParseCertificate(pemcert.Bytes)
+    if err != nil {
+        fmt.Println(err)
+        panic("Failed to parse Cert")
+    }
+    fmt.Println(cert.IsCA)
+
+    //certmagic.DefaultACME.TrustedRoots.AddCert(cert)
+
+
+    pool, err := x509.SystemCertPool()
+    if err != nil {
+        fmt.Println(err)
+        panic("Failed to get system Certpool")
+    }
+
+    pool.AddCert(cert)
+
+	solver := DNSSolver{
+		Addr:   "127.0.0.1:1053",
+		Config: config,
+	}
+
     acmeIssuerTemplate := certmagic.ACMEIssuer{
         Agreed:                  true,
         DisableHTTPChallenge:    true,
         DisableTLSALPNChallenge: true,
+        CA: "localhost:14000/dir",
+        TestCA: "localhost:14000/dir",
+        Email: "test@test.test",
+        DNS01Solver: solver,
+        TrustedRoots: pool,
     }
-    acmeIssuerTemplate.TestCA = "https://localhost:14000/dir" //pebble
-    acmeIssuerTemplate.CA = "https://localhost:14000/dir"
-    acmeConfigTemplate := NewCertmagicConfig(config)
+
+    acmeConfigTemplate := NewCertmagicConfig()
     cache := certmagic.NewCache(certmagic.CacheOptions{
         GetConfigForCert: func(cert certmagic.Certificate) (*certmagic.Config, error) {
             return acmeConfigTemplate, nil
@@ -45,6 +89,7 @@ func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
     })
     acmeConfig := certmagic.New(cache, *acmeConfigTemplate)
     acmeIssuer := certmagic.NewACMEIssuer(acmeConfig, acmeIssuerTemplate)
+    acmeConfig.Issuers = append(acmeConfig.Issuers, acmeIssuer)
 
     fmt.Println("End of NewACMEManager")
     return &ACMEManager{
@@ -78,9 +123,6 @@ func parseTLS(c *caddy.Controller) error {
 			// first check if a certificate is already present
 			fmt.Println("Starting ACME")
 
-
-
-
             ctx := context.Background()
 
 			var domainNameACME string
@@ -102,6 +144,7 @@ func parseTLS(c *caddy.Controller) error {
 			}
 
             manager := NewACMEManager(config, domainNameACME)
+
             err := manager.Config.ObtainCertSync(ctx, manager.Zone)
             if err != nil {
                 return c.Errf("failed to Obtain Cert '%v'", err)

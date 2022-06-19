@@ -30,7 +30,7 @@ func TestWithPebble(t *testing.T) {
 	}
 	defer ex.Stop()
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(5 * time.Second)
 	err = cmd.Process.Kill()
 	if err != nil {
 		t.Errorf("Failed to kill pebble: %v", err)
