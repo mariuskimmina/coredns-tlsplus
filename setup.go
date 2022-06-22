@@ -2,6 +2,9 @@ package tls
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	ctls "crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -31,6 +34,21 @@ type ACMEManager struct {
     Zone string //The Domain
 }
 
+// encodePrivateKey encodes an ECDSA private key to PEM format.
+func encodePrivateKey(key *ecdsa.PrivateKey) ([]byte, error) {
+	derKey, err := x509.MarshalECPrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	keyBlock := &pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: derKey,
+	}
+
+	return pem.EncodeToMemory(keyBlock), nil
+}
+
 func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
     fmt.Println("Start of NewACMEManager")
 
@@ -41,21 +59,13 @@ func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
     }
     pemcert, _ := pem.Decode(certbytes)
     if pemcert == nil {
-        fmt.Println("fuck")
+        fmt.Println("pemcert not found")
     }
-    fmt.Println(pemcert.Bytes)
-
-    ////chain, err := ctls.LoadX509KeyPair("test/certs/pebble.minica.pem", "test/certs/pebble.minica.key.pem")
-
     cert, err := x509.ParseCertificate(pemcert.Bytes)
     if err != nil {
         fmt.Println(err)
         panic("Failed to parse Cert")
     }
-    fmt.Println(cert.IsCA)
-
-    //certmagic.DefaultACME.TrustedRoots.AddCert(cert)
-
 
     pool, err := x509.SystemCertPool()
     if err != nil {
@@ -69,6 +79,23 @@ func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
 		Addr:   "127.0.0.1:1053",
 		Config: config,
 	}
+
+    //create key for account
+    accountPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+        fmt.Println(err)
+		panic("failed to generate account key")
+	}
+
+    _, err = encodePrivateKey(accountPrivateKey)
+	if err != nil {
+        fmt.Println(err)
+		panic("failed to encode account key")
+	}
+
+    //certmagic.DefaultACME.AccountKeyPEM = string(accountPrivateKeyPem[:])
+
+
 
     acmeIssuerTemplate := certmagic.ACMEIssuer{
         Agreed:                  true,

@@ -1,21 +1,15 @@
 package test
 
 import (
-	"os/exec"
+	//"os/exec"
 	"testing"
 	"time"
 )
 
 func TestWithPebble(t *testing.T) {
-	binary := "pebble"
-	arg0 := "-dnsserver"
-	arg1 := "127.0.0.1:1053"
-	cmd := exec.Command(binary, arg0, arg1)
+    resolverAddress := "127.0.0.1:1053"
 	go func() {
-		err := cmd.Start()
-		if err != nil {
-			t.Errorf("Failed to run pebble: %v", err)
-		}
+        PebbleServer(resolverAddress)
 	}()
 
 	corefile := `.:1053 {
@@ -31,7 +25,7 @@ func TestWithPebble(t *testing.T) {
 	defer ex.Stop()
 
 	time.Sleep(5 * time.Second)
-	err = cmd.Process.Kill()
+	//err = cmd.Process.Kill()
 	if err != nil {
 		t.Errorf("Failed to kill pebble: %v", err)
 	}

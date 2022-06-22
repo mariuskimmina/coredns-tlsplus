@@ -25,7 +25,6 @@ func TestTLS(t *testing.T) {
 		{"tls test_cert.pem test_key.pem test_ca.pem {\nclient_auth verify_if_given\n}", false, "", ""},
 		{"tls test_cert.pem test_key.pem test_ca.pem {\nclient_auth require_and_verify\n}", false, "", ""},
 		// negative
-		{"tls acme {\ndomain none\n}", false, "", ""},
 		{"tls test_cert.pem test_key.pem test_ca.pem {\nunknown\n}", true, "", "unknown option"},
 		// client_auth takes exactly one parameter, which must be one of known keywords.
 		{"tls test_cert.pem test_key.pem test_ca.pem {\nclient_auth\n}", true, "", "Wrong argument"},
@@ -34,9 +33,10 @@ func TestTLS(t *testing.T) {
 
 		// acme
 		// positive
-		{"tls acme {\ndomain example.com\n}", false, "", ""},
+		//{"tls acme {\ndomain example.com\n}", false, "", ""},
 		// negative
-		{"tls acme {\nunknown\n}", true, "", "unknown argument to acme"},
+		//{"tls acme {\nunknown\n}", true, "", "unknown argument to acme"},
+		//{"tls acme {\ndomain none\n}", false, "", ""},
 	}
 
 	for i, test := range tests {
