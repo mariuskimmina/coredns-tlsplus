@@ -6,6 +6,6 @@ import (
 
 func NewCertmagicConfig() *certmagic.Config {
 	acmeConfig := certmagic.NewDefault()
-    acmeConfig.TLSConfig().InsecureSkipVerify = true
+	acmeConfig.TLSConfig().InsecureSkipVerify = true
 	return acmeConfig
 }

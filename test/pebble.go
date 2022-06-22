@@ -1,19 +1,18 @@
 package test
 
 import (
-    "flag"
+	"flag"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 
-    "github.com/letsencrypt/pebble/v2/ca"
+	"github.com/letsencrypt/pebble/v2/ca"
 	"github.com/letsencrypt/pebble/v2/cmd"
 	"github.com/letsencrypt/pebble/v2/db"
 	"github.com/letsencrypt/pebble/v2/va"
 	"github.com/letsencrypt/pebble/v2/wfe"
 )
-
 
 type config struct {
 	Pebble struct {

@@ -7,9 +7,9 @@ import (
 )
 
 func TestWithPebble(t *testing.T) {
-    resolverAddress := "127.0.0.1:1053"
+	resolverAddress := "127.0.0.1:1053"
 	go func() {
-        PebbleServer(resolverAddress)
+		PebbleServer(resolverAddress)
 	}()
 
 	corefile := `.:1053 {
