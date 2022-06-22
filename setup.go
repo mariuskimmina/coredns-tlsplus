@@ -29,21 +29,20 @@ func setup(c *caddy.Controller) error {
 }
 
 type ACMEManager struct {
-    // TODO: I don't think the certmagic.Config is actually needed,
-    // try to remove it
+	// TODO: I don't think the certmagic.Config is actually needed,
+	// try to remove it
 	Config *certmagic.Config     //Configs for Serving
 	Issuer *certmagic.ACMEIssuer //The ACME Client
 	Zone   string                //The Domain
 }
 
-
 // NewACMEManager create a new ACMEManager
 func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
 	fmt.Println("Start of NewACMEManager")
 
-    // TODO: this lets our  acme client trust the pebble cert
-    // this is only needed for testing and should not be in production
-    // figure out how to only do this in test cases
+	// TODO: this lets our  acme client trust the pebble cert
+	// this is only needed for testing and should not be in production
+	// figure out how to only do this in test cases
 	certbytes, err := os.ReadFile("test/certs/pebble.minica.pem")
 	if err != nil {
 		fmt.Println(err.Error())
@@ -65,8 +64,7 @@ func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
 	}
 	pool.AddCert(cert)
 
-
-    //TODO: the address cannot be hardcoded
+	//TODO: the address cannot be hardcoded
 	solver := &DNSSolver{
 		Addr:   "127.0.0.1:1053",
 		Config: config,
@@ -152,7 +150,7 @@ func parseTLS(c *caddy.Controller) error {
 
 			fmt.Println("End of ACME config parsing")
 		} else {
-            //No ACME part - plugin continues to work like the normal tls plugin
+			//No ACME part - plugin continues to work like the normal tls plugin
 			fmt.Println("Uing manually conigured certificate")
 			if len(args) < 2 || len(args) > 3 {
 				return plugin.Error("tls", c.ArgErr())

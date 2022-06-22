@@ -8,13 +8,13 @@ import (
 )
 
 func TestWithPebble(t *testing.T) {
-    // TODO: there should be a better way to do this
-    // removing the certmagic dir, so that certmagic does
-    // not try to use exisiting accounts  from previous tests
-    err := os.RemoveAll("/home/marius/.local/share/certmagic")
-    if err != nil {
-        fmt.Println("Nothing to remove in certmagic")
-    }
+	// TODO: there should be a better way to do this
+	// removing the certmagic dir, so that certmagic does
+	// not try to use exisiting accounts  from previous tests
+	err := os.RemoveAll("/home/marius/.local/share/certmagic")
+	if err != nil {
+		fmt.Println("Nothing to remove in certmagic")
+	}
 
 	resolverAddress := "127.0.0.1:1053"
 	go func() {

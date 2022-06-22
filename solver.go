@@ -79,11 +79,10 @@ func (as *ACMEServer) ServePacket(p net.PacketConn, challenge acme.Challenge) er
 
 func (as *ACMEServer) ShutDown() error {
 	fmt.Println("Start of ACMEServer Shutdown")
-    err := as.server.Shutdown()
-    fmt.Println("End of ACMEServer Shutdown")
-    return err
+	err := as.server.Shutdown()
+	fmt.Println("End of ACMEServer Shutdown")
+	return err
 }
-
 
 // Present is called just before a challenge is initiated.
 // The implementation MUST prepare anything that is necessary
@@ -95,7 +94,7 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 	var config []*dnsserver.Config
 	config = append(config, d.Config)
 
-    acmeServer := &ACMEServer{}
+	acmeServer := &ACMEServer{}
 	d.DNS = acmeServer
 
 	addr := net.UDPAddr{
@@ -124,8 +123,8 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 }
 
 func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
-    //TODO: a better wait implementation
-    // could use channels here
+	//TODO: a better wait implementation
+	// could use channels here
 	fmt.Println("Start of DNSSolver Wait")
 	time.Sleep(5 * time.Second)
 	fmt.Println("End of DNSSolver Wait")
@@ -139,7 +138,7 @@ func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 func (d *DNSSolver) CleanUp(ctx context.Context, challenge acme.Challenge) error {
 	fmt.Println("Start of DNSSolver CleanUp!")
 	err := d.DNS.ShutDown()
-    fmt.Println("After Shutdown call")
+	fmt.Println("After Shutdown call")
 	if err != nil {
 		fmt.Println("Error shutting down")
 		fmt.Println(err)
