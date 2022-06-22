@@ -1,12 +1,21 @@
 package test
 
 import (
-	//"os/exec"
+	"fmt"
+	"os"
 	"testing"
-	"time"
+	//"time"
 )
 
 func TestWithPebble(t *testing.T) {
+    // TODO: there should be a better way to do this
+    // removing the certmagic dir, so that certmagic does
+    // not try to use exisiting accounts  from previous tests
+    err := os.RemoveAll("/home/marius/.local/share/certmagic")
+    if err != nil {
+        fmt.Println("Nothing to remove in certmagic")
+    }
+
 	resolverAddress := "127.0.0.1:1053"
 	go func() {
 		PebbleServer(resolverAddress)
@@ -24,8 +33,6 @@ func TestWithPebble(t *testing.T) {
 	}
 	defer ex.Stop()
 
-	time.Sleep(5 * time.Second)
-	//err = cmd.Process.Kill()
 	if err != nil {
 		t.Errorf("Failed to kill pebble: %v", err)
 	}

@@ -3,8 +3,8 @@ package tls
 import (
 	"context"
 	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
+	//"crypto/elliptic"
+	//"crypto/rand"
 	ctls "crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -29,29 +29,21 @@ func setup(c *caddy.Controller) error {
 }
 
 type ACMEManager struct {
+    // TODO: I don't think the certmagic.Config is actually needed,
+    // try to remove it
 	Config *certmagic.Config     //Configs for Serving
 	Issuer *certmagic.ACMEIssuer //The ACME Client
 	Zone   string                //The Domain
 }
 
-// encodePrivateKey encodes an ECDSA private key to PEM format.
-func encodePrivateKey(key *ecdsa.PrivateKey) ([]byte, error) {
-	derKey, err := x509.MarshalECPrivateKey(key)
-	if err != nil {
-		return nil, err
-	}
 
-	keyBlock := &pem.Block{
-		Type:  "EC PRIVATE KEY",
-		Bytes: derKey,
-	}
-
-	return pem.EncodeToMemory(keyBlock), nil
-}
-
+// NewACMEManager create a new ACMEManager
 func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
 	fmt.Println("Start of NewACMEManager")
 
+    // TODO: this lets our  acme client trust the pebble cert
+    // this is only needed for testing and should not be in production
+    // figure out how to only do this in test cases
 	certbytes, err := os.ReadFile("test/certs/pebble.minica.pem")
 	if err != nil {
 		fmt.Println(err.Error())
@@ -66,34 +58,19 @@ func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
 		fmt.Println(err)
 		panic("Failed to parse Cert")
 	}
-
 	pool, err := x509.SystemCertPool()
 	if err != nil {
 		fmt.Println(err)
 		panic("Failed to get system Certpool")
 	}
-
 	pool.AddCert(cert)
 
-	solver := DNSSolver{
+
+    //TODO: the address cannot be hardcoded
+	solver := &DNSSolver{
 		Addr:   "127.0.0.1:1053",
 		Config: config,
 	}
-
-	//create key for account
-	accountPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		fmt.Println(err)
-		panic("failed to generate account key")
-	}
-
-	_, err = encodePrivateKey(accountPrivateKey)
-	if err != nil {
-		fmt.Println(err)
-		panic("failed to encode account key")
-	}
-
-	//certmagic.DefaultACME.AccountKeyPEM = string(accountPrivateKeyPem[:])
 
 	acmeIssuerTemplate := certmagic.ACMEIssuer{
 		Agreed:                  true,
@@ -144,7 +121,6 @@ func parseTLS(c *caddy.Controller) error {
 
 		if args[0] == "acme" {
 			// start of the acme flow,
-			// first check if a certificate is already present
 			fmt.Println("Starting ACME")
 
 			ctx := context.Background()
@@ -176,6 +152,7 @@ func parseTLS(c *caddy.Controller) error {
 
 			fmt.Println("End of ACME config parsing")
 		} else {
+            //No ACME part - plugin continues to work like the normal tls plugin
 			fmt.Println("Uing manually conigured certificate")
 			if len(args) < 2 || len(args) > 3 {
 				return plugin.Error("tls", c.ArgErr())
@@ -213,4 +190,19 @@ func parseTLS(c *caddy.Controller) error {
 		}
 	}
 	return nil
+}
+
+// encodePrivateKey encodes an ECDSA private key to PEM format.
+func encodePrivateKey(key *ecdsa.PrivateKey) ([]byte, error) {
+	derKey, err := x509.MarshalECPrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	keyBlock := &pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: derKey,
+	}
+
+	return pem.EncodeToMemory(keyBlock), nil
 }
