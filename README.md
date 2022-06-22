@@ -36,7 +36,14 @@ tls CERT KEY [CA]
 Parameter CA is optional. If not set, system CAs can be used to verify the client certificate
 
 ## Test setup
-TODO
+
+All test can be run locally with
+
+```
+go test ./...
+```
+
+Port 14000 (ACME Server) and 1053 (CoreDNS) are required for integration tests
 
 
 ## How ACME works
