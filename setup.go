@@ -29,8 +29,6 @@ func setup(c *caddy.Controller) error {
 }
 
 type ACMEManager struct {
-	// TODO: I don't think the certmagic.Config is actually needed,
-	// try to remove it
 	Config *certmagic.Config     //Configs for Serving
 	Issuer *certmagic.ACMEIssuer //The ACME Client
 	Zone   string                //The Domain

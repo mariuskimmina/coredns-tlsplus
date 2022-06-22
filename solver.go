@@ -15,6 +15,8 @@ import (
 )
 
 type DNSSolver struct {
+	// TODO: I don't think the dnsserver.Config is actually needed,
+	// try to remove it
 	Addr   string
 	Config *dnsserver.Config
 	DNS    *ACMEServer
