@@ -65,7 +65,6 @@ func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
 	//TODO: the address cannot be hardcoded
 	solver := &DNSSolver{
 		Addr:   "127.0.0.1:1053",
-		Config: config,
 	}
 
 	acmeIssuerTemplate := certmagic.ACMEIssuer{

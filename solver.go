@@ -8,17 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/request"
 	"github.com/mholt/acmez/acme"
 	"github.com/miekg/dns"
 )
 
 type DNSSolver struct {
-	// TODO: I don't think the dnsserver.Config is actually needed,
-	// try to remove it
 	Addr   string
-	Config *dnsserver.Config
 	DNS    *ACMEServer
 }
 
@@ -93,8 +89,6 @@ func (as *ACMEServer) ShutDown() error {
 // serve exactly one request and
 func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error {
 	fmt.Println("Start of DNSSover Present !")
-	var config []*dnsserver.Config
-	config = append(config, d.Config)
 
 	acmeServer := &ACMEServer{}
 	d.DNS = acmeServer
