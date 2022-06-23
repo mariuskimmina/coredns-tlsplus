@@ -45,11 +45,11 @@ type (
 )
 
 func (as *ACMEServer) ServePacket(p net.PacketConn, challenge acme.Challenge) error {
-	fmt.Println("ACMEServer Starting to serve UDP!!!!!!!!!")
+	fmt.Println("Start of ACMEServer ServePacket")
 	as.m.Lock()
 	as.server = &dns.Server{PacketConn: p, Net: "udp", Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
 		acme_request := true
-		fmt.Println("ACMEHandler Handling DNS Challenge UDP!!!!")
+		fmt.Println("ACMEServer Handling DNS Request (UDP)")
 		state := request.Request{W: w, Req: r}
 		hdr := dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeTXT, Class: dns.ClassANY, Ttl: 0}
 		m := new(dns.Msg)
@@ -60,16 +60,16 @@ func (as *ACMEServer) ServePacket(p net.PacketConn, challenge acme.Challenge) er
 		}
 
 		if !(strings.HasPrefix(state.Name(), "_acme-challenge")) {
-			fmt.Println("Received Something else!")
+			fmt.Println("Received Something else, ignoring")
 			acme_request = false
 		}
 
 		if acme_request {
-			fmt.Println("Received ACME Challenge!")
+			fmt.Println("Received ACME Challenge")
 			m.Answer = append(m.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
 			fmt.Println(m)
 			w.WriteMsg(m)
-			fmt.Println("Done handling ACME Challenge UDP!!!!")
+			fmt.Println("Done handling ACME Challenge")
 		} else {
 			fmt.Println("Ignoring DNS request:", state.Name())
 		}
@@ -140,7 +140,6 @@ func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 func (d *DNSSolver) CleanUp(ctx context.Context, challenge acme.Challenge) error {
 	fmt.Println("Start of DNSSolver CleanUp!")
 	err := d.DNS.ShutDown()
-	fmt.Println("After Shutdown call")
 	if err != nil {
 		fmt.Println("Error shutting down")
 		fmt.Println(err)

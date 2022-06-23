@@ -146,6 +146,8 @@ func parseTLS(c *caddy.Controller) error {
 				return c.Errf("failed to Obtain Cert '%v'", err)
 			}
 
+            // TODO: start using the obtained certificate
+
 			fmt.Println("End of ACME config parsing")
 		} else {
 			//No ACME part - plugin continues to work like the normal tls plugin
