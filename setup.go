@@ -146,6 +146,18 @@ func parseTLS(c *caddy.Controller) error {
 			}
 
             // TODO: start using the obtained certificate
+            fmt.Println("Starting to configure Certificate")
+            cert := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
+            key := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.key"
+            var newArgs []string
+            newArgs = append(newArgs, cert)
+            newArgs = append(newArgs, key)
+			tlsconf, err = tls.NewTLSConfigFromArgs(newArgs...)
+			if err != nil {
+				return err
+			}
+            fmt.Println("Starting to set TLSConf")
+			configureTLS(config, tlsconf, clientAuth)
 
 			fmt.Println("End of ACME config parsing")
 		} else {

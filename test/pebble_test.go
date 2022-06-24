@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	//"time"
 
@@ -37,13 +38,13 @@ func TestCorefile(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
+			if err := os.RemoveAll(certmagicDataPath); err != nil {
+				t.Logf("Nothing to remove in %q", certmagicDataPath)
+			}
 			go func() {
 				// todo: start and shutdown
 				PebbleServer(tc.resolverAddress)
 			}()
-			if err := os.RemoveAll(certmagicDataPath); err != nil {
-				t.Logf("Nothing to remove in %q", certmagicDataPath)
-			}
 
 			ex, _, tcp, err := CoreDNSServerAndPorts(tc.config)
 			if err != nil {
@@ -54,10 +55,15 @@ func TestCorefile(t *testing.T) {
 
             m := new(dns.Msg)
 			m.SetQuestion(tc.Qname, tc.Qtype)
-			m.SetEdns0(4096, true)
+			m.SetEdns0(8192, true)
             client := dns.Client{
                 Net: "tcp-tls",
                 TLSConfig: &tls.Config{InsecureSkipVerify: true},
+                Timeout: 5 * time.Second,
+                DialTimeout: 5 * time.Second,
+                ReadTimeout: 5 * time.Second,
+                WriteTimeout: 5 * time.Second,
+                UDPSize: 8192,
             }
             r, _, err := client.Exchange(m, tcp)
 

@@ -61,7 +61,6 @@ func (as *ACMEServer) ServePacket(p net.PacketConn, challenge acme.Challenge) er
 		if acme_request {
 			fmt.Println("Received ACME Challenge")
 			m.Answer = append(m.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
-			fmt.Println(m)
 			w.WriteMsg(m)
 			fmt.Println("Done handling ACME Challenge")
 		} else {
@@ -115,7 +114,6 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 		}
 		fmt.Println("ACME DNS Server has been shutdown!")
 	}()
-	fmt.Println("DNS Server should be up")
 	fmt.Println("End of DNSSover Present !")
 	return nil
 }
