@@ -18,6 +18,7 @@ func TestTLS(t *testing.T) {
 	}{
 		// regular tls
 		// positive
+		{"tls test_cert.pem test_key.pem", false, "", ""},
 		{"tls test_cert.pem test_key.pem test_ca.pem", false, "", ""},
 		{"tls test_cert.pem test_key.pem test_ca.pem {\nclient_auth nocert\n}", false, "", ""},
 		{"tls test_cert.pem test_key.pem test_ca.pem {\nclient_auth request\n}", false, "", ""},

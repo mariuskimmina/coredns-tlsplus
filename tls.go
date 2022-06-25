@@ -11,5 +11,4 @@ func configureTLS(conf *dnsserver.Config, tlsconf *tls.Config, clientAuth tls.Cl
 	// NewTLSConfigs only sets RootCAs, so we need to let ClientCAs refer to it.
 	tlsconf.ClientCAs = tlsconf.RootCAs
 	conf.TLSConfig = tlsconf
-    conf.TLSConfig.InsecureSkipVerify = true
 }

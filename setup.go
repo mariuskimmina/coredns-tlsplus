@@ -147,17 +147,35 @@ func parseTLS(c *caddy.Controller) error {
 
             // TODO: start using the obtained certificate
             fmt.Println("Starting to configure Certificate")
-            cert := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
-            key := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.key"
-            var newArgs []string
-            newArgs = append(newArgs, cert)
-            newArgs = append(newArgs, key)
-			tlsconf, err = tls.NewTLSConfigFromArgs(newArgs...)
+            certFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
+            keyFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.key"
+            certByes, err := os.ReadFile(certFile)
 			if err != nil {
-				return err
+				return c.Errf("failed to Read Cert '%v'", err)
 			}
-            fmt.Println("Starting to set TLSConf")
-			configureTLS(config, tlsconf, clientAuth)
+            keyBytes, err := os.ReadFile(keyFile)
+			if err != nil {
+				return c.Errf("failed to Read Key '%v'", err)
+			}
+
+            cert, err := ctls.X509KeyPair(certByes, keyBytes)
+            tlsconf := &ctls.Config{
+                Certificates: []ctls.Certificate{cert},
+            }
+            //var newArgs []string
+            //newArgs = append(newArgs, cert)
+            //newArgs = append(newArgs, key)
+
+			//tlsconf, err = tls.NewTLSConfigFromArgs(newArgs...)
+			//if err != nil {
+				//return err
+			//}
+            //fmt.Println("Starting to set TLSConf")
+			//configureTLS(config, tlsconf, clientAuth)
+            //tlsconf.ClientAuth = clientAuth
+            // NewTLSConfigs only sets RootCAs, so we need to let ClientCAs refer to it.
+            //tlsconf.ClientCAs = tlsconf.RootCAs
+            config.TLSConfig = tlsconf
 
 			fmt.Println("End of ACME config parsing")
 		} else {
