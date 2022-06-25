@@ -14,16 +14,15 @@ import (
 )
 
 type DNSSolver struct {
-	Addr   string
-	DNS    *ACMEServer
+	Addr string
+	DNS  *ACMEServer
 }
 
 type ACMEServer struct {
-	m      sync.Mutex  // protects the servers
-	server *dns.Server // 0 is a net.Listener, 1 is a net.PacketConn (a *UDPConn) in our case.
+	m         sync.Mutex  // protects the servers
+	server    *dns.Server // 0 is a net.Listener, 1 is a net.PacketConn (a *UDPConn) in our case.
 	readyChan chan string
 }
-
 
 const (
 	tcp = 0
@@ -69,7 +68,7 @@ func (as *ACMEServer) ServePacket(p net.PacketConn, challenge acme.Challenge) er
 	})}
 	as.m.Unlock()
 
-    as.readyChan <- "ready"
+	as.readyChan <- "ready"
 	return as.server.ActivateAndServe()
 }
 
@@ -88,10 +87,10 @@ func (as *ACMEServer) ShutDown() error {
 func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error {
 	fmt.Println("Start of DNSSover Present !")
 
-    readyChan := make(chan string)
+	readyChan := make(chan string)
 	acmeServer := &ACMEServer{
-        readyChan: readyChan,
-    }
+		readyChan: readyChan,
+	}
 	d.DNS = acmeServer
 
 	addr := net.UDPAddr{
@@ -120,12 +119,12 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 
 func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 	fmt.Println("Start of DNSSolver Wait")
-    select {
-    case msg := <-d.DNS.readyChan:
-        fmt.Println("Received Message: ", msg)
-    case <-time.After(4 * time.Second):
-        fmt.Println("Timeout")
-    }
+	select {
+	case msg := <-d.DNS.readyChan:
+		fmt.Println("Received Message: ", msg)
+	case <-time.After(4 * time.Second):
+		fmt.Println("Timeout")
+	}
 	fmt.Println("End of DNSSolver Wait")
 	return nil
 }
