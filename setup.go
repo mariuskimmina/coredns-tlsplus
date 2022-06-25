@@ -140,7 +140,12 @@ func parseTLS(c *caddy.Controller) error {
 
 			manager := NewACMEManager(config, domainNameACME)
 
-			err := manager.Config.ObtainCertSync(ctx, manager.Zone)
+            //  solver := certmagic.DNS01Solver{
+            //}
+
+            var names []string
+            names = append(names, manager.Zone)
+			err := manager.Config.ManageSync(ctx, names)
 			if err != nil {
 				return c.Errf("failed to Obtain Cert '%v'", err)
 			}
@@ -176,6 +181,9 @@ func parseTLS(c *caddy.Controller) error {
 			// NewTLSConfigs only sets RootCAs, so we need to let ClientCAs refer to it.
 			//tlsconf.ClientCAs = tlsconf.RootCAs
 			config.TLSConfig = tlsconf
+
+            // TODO: change DNSSolver config so that the 
+            // acutal CoreDNS Server is used for further ACME Challenges
 
 			fmt.Println("End of ACME config parsing")
 		} else {
