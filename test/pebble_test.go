@@ -3,7 +3,6 @@ package test
 import (
 	"crypto/tls"
 	"fmt"
-	"io"
 	"os"
 	"testing"
 	"time"
@@ -18,6 +17,7 @@ func TestCorefile(t *testing.T) {
     pebbleTestConfig := "test/config/pebble-config.json"
     pebbleStrictMode := false
     resolverAddress := "127.0.0.1:1053"
+    exampleDotComIP := "93.184.216.34"
 
 	testcases := []struct {
 		name            string
@@ -26,6 +26,8 @@ func TestCorefile(t *testing.T) {
         Qname           string
         Qtype           uint16 
         Answer          []dns.RR
+        AnswerLength    int 
+        WhoAmI          bool
 	}{
 		{
 			name: "Test manual cert and key",
@@ -35,7 +37,9 @@ func TestCorefile(t *testing.T) {
             }`,
             Qname: "example.com.",
             Qtype: dns.TypeA,
-            Answer: nil,
+            Answer: []dns.RR{},
+            AnswerLength: 0,
+            WhoAmI: true,
 		},
 		{
 			name: "Test ACME whoami",
@@ -47,7 +51,9 @@ func TestCorefile(t *testing.T) {
             }`,
             Qname: "example.com.",
             Qtype: dns.TypeTXT,
-            Answer: nil,
+            Answer: []dns.RR{},
+            AnswerLength: 0,
+            WhoAmI: true,
 		},
 		{
 			name: "Test ACME forward to Google",
@@ -59,7 +65,9 @@ func TestCorefile(t *testing.T) {
             }`,
             Qname: "example.com.",
             Qtype: dns.TypeA,
-            Answer: nil,
+            Answer: []dns.RR{},
+            AnswerLength: 1,
+            WhoAmI: false,
 		},
 	}
     go func() {
@@ -81,7 +89,6 @@ func TestCorefile(t *testing.T) {
 
             m := new(dns.Msg)
 			m.SetQuestion(tc.Qname, tc.Qtype)
-			//m.SetEdns0(4096, true)
             client := dns.Client{
                 Net: "tcp-tls",
                 TLSConfig: &tls.Config{InsecureSkipVerify: true},
@@ -92,20 +99,24 @@ func TestCorefile(t *testing.T) {
             }
             r, _, err := client.Exchange(m, tcp)
 
-			if err != nil && err != io.EOF {
+			if err != nil {
 				t.Fatalf("Could not exchange msg: %s", err)
 			}
 
-            // No idea what's going on here
-            if err == io.EOF {
-                t.Fatal("Stupid EOF error")
+            if n := len(r.Answer); n != tc.AnswerLength {
+				t.Fatalf("Expected %v answers, got %v", tc.AnswerLength, n)
+			}
+
+            if tc.AnswerLength > 0 {
+                if r.Answer[0].(*dns.A).A.String() != exampleDotComIP {
+                    t.Errorf("Expected %s for example.com, got: %s", exampleDotComIP, r.Answer[0].(*dns.A).A.String())
+                }
             }
-            //if n := len(r.Answer); n != len(tc.Answer) {
-				//t.Fatalf("Expected %v answers, got %v", len(tc.Answer), n)
-			//}
-            fmt.Println(r.Answer)
-            fmt.Println(r.String())
-            t.Error()
+            if tc.WhoAmI {
+                if n := len(r.Extra); n != 2 {
+                    t.Errorf("Expected 2 RRs in additional section, but got %d", n)
+                }
+            }
 
 		})
 	}
