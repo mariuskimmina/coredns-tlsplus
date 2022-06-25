@@ -29,7 +29,7 @@ func TestCorefile(t *testing.T) {
 	}{
 		{
 			name: "Test manual cert and key",
-			config: `.:1053 {
+            config: `tls://.:1053 {
                 tls test2_cert.pem test2_key.pem
                 whoami  
             }`,
@@ -39,7 +39,7 @@ func TestCorefile(t *testing.T) {
 		},
 		{
 			name: "Test ACME whoami",
-			config: `.:1053 {
+            config: `tls://.:1053 {
                 tls acme {
                     domain example.com
                 }
@@ -51,7 +51,7 @@ func TestCorefile(t *testing.T) {
 		},
 		{
 			name: "Test ACME forward to Google",
-			config: `.:1053 {
+            config: `tls://.:1053 {
                 tls acme {
                     domain example.com
                 }
