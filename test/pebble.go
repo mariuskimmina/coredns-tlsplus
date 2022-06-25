@@ -1,7 +1,6 @@
 package test
 
 import (
-	"flag"
 	"log"
 	"net/http"
 	"os"
@@ -33,27 +32,13 @@ type config struct {
 	}
 }
 
-func PebbleServer(resolverAddress string) {
-	configFile := flag.String(
-		"config",
-		"test/config/pebble-config.json",
-		"File path to the Pebble configuration file")
-	strictMode := flag.Bool(
-		"strict",
-		false,
-		"Enable strict mode to test upcoming API breaking changes")
-	flag.Parse()
-	if *configFile == "" {
-		flag.Usage()
-		os.Exit(1)
-	}
-
+func PebbleServer(resolverAddress string, configFile string, strictMode bool) {
 	// Log to stdout
 	logger := log.New(os.Stdout, "Pebble ", log.LstdFlags)
 	logger.Printf("Starting Pebble ACME server")
 
 	var c config
-	err := cmd.ReadConfigFile(*configFile, &c)
+	err := cmd.ReadConfigFile(configFile, &c)
 	cmd.FailOnError(err, "Reading JSON config file into config structure")
 
 	alternateRoots := 0
@@ -69,7 +54,7 @@ func PebbleServer(resolverAddress string) {
 
 	db := db.NewMemoryStore()
 	ca := ca.New(logger, db, c.Pebble.OCSPResponderURL, alternateRoots, chainLength, c.Pebble.CertificateValidityPeriod)
-	va := va.New(logger, c.Pebble.HTTPPort, c.Pebble.TLSPort, *strictMode, resolverAddress)
+	va := va.New(logger, c.Pebble.HTTPPort, c.Pebble.TLSPort, strictMode, resolverAddress)
 
 	for keyID, key := range c.Pebble.ExternalAccountMACKeys {
 		err := db.AddExternalAccountKeyByID(keyID, key)
@@ -81,7 +66,7 @@ func PebbleServer(resolverAddress string) {
 		cmd.FailOnError(err, "Failed to add domain to block list")
 	}
 
-	wfeImpl := wfe.New(logger, db, va, ca, *strictMode, c.Pebble.ExternalAccountBindingRequired)
+	wfeImpl := wfe.New(logger, db, va, ca, strictMode, c.Pebble.ExternalAccountBindingRequired)
 	muxHandler := wfeImpl.Handler()
 
 	if c.Pebble.ManagementListenAddress != "" {

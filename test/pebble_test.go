@@ -14,6 +14,9 @@ import (
 
 func TestCorefile(t *testing.T) {
 	certmagicDataPath := "/home/marius/.local/share/certmagic"
+    pebbleTestConfig := "test/config/pebble-config.json"
+    pebbleStrictMode := false
+    resolverAddress := "127.0.0.1:1053"
 	testcases := []struct {
 		name            string
 		config          string
@@ -23,28 +26,37 @@ func TestCorefile(t *testing.T) {
         Answer          []dns.RR
 	}{
 		{
-			name: "LocalAddr",
+			name: "Test with manual cert and key",
+			config: `.:1053 {
+                tls test_cert.pem test_key.pem
+                forward . 8.8.8.8
+            }`,
+            Qname: "example.com.",
+            Qtype: dns.TypeA,
+            Answer: nil,
+		},
+		{
+			name: "Test ACME with example.com",
 			config: `.:1053 {
                 tls acme {
                     domain example.com
                 }
                 forward . 8.8.8.8
             }`,
-			resolverAddress: "127.0.0.1:1053",
-            Qname: "example.org.",
+            Qname: "example.com.",
             Qtype: dns.TypeA,
             Answer: nil,
 		},
 	}
+    go func() {
+        // todo: start and shutdown
+        PebbleServer(resolverAddress, pebbleTestConfig, pebbleStrictMode)
+    }()
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			if err := os.RemoveAll(certmagicDataPath); err != nil {
 				t.Logf("Nothing to remove in %q", certmagicDataPath)
 			}
-			go func() {
-				// todo: start and shutdown
-				PebbleServer(tc.resolverAddress)
-			}()
 
 			ex, _, tcp, err := CoreDNSServerAndPorts(tc.config)
 			if err != nil {
