@@ -17,7 +17,6 @@ func TestCorefile(t *testing.T) {
 	pebbleTestConfig := "test/config/pebble-config.json"
 	pebbleStrictMode := false
 	resolverAddress := "127.0.0.1:1053"
-	exampleDotComIP := "93.184.216.34"
 
 	testcases := []struct {
 		name            string
@@ -28,6 +27,7 @@ func TestCorefile(t *testing.T) {
 		Answer          []dns.RR
 		AnswerLength    int
 		WhoAmI          bool
+        ExpectedIP      string
 	}{
 		{
 			name: "Test manual cert and key",
@@ -40,6 +40,7 @@ func TestCorefile(t *testing.T) {
 			Answer:       []dns.RR{},
 			AnswerLength: 0,
 			WhoAmI:       true,
+            ExpectedIP:   "",
 		},
 		{
 			name: "Test ACME whoami",
@@ -54,6 +55,7 @@ func TestCorefile(t *testing.T) {
 			Answer:       []dns.RR{},
 			AnswerLength: 0,
 			WhoAmI:       true,
+            ExpectedIP:   "",
 		},
 		{
 			name: "Test ACME forward to Google",
@@ -68,6 +70,7 @@ func TestCorefile(t *testing.T) {
 			Answer:       []dns.RR{},
 			AnswerLength: 1,
 			WhoAmI:       false,
+            ExpectedIP:   "93.184.216.34",
 		},
 	}
 	go func() {
@@ -108,8 +111,8 @@ func TestCorefile(t *testing.T) {
 			}
 
 			if tc.AnswerLength > 0 {
-				if r.Answer[0].(*dns.A).A.String() != exampleDotComIP {
-					t.Errorf("Expected %s for example.com, got: %s", exampleDotComIP, r.Answer[0].(*dns.A).A.String())
+				if r.Answer[0].(*dns.A).A.String() != tc.ExpectedIP {
+					t.Errorf("Expected %s for example.com, got: %s", tc.ExpectedIP, r.Answer[0].(*dns.A).A.String())
 				}
 			}
 			if tc.WhoAmI {
