@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"strconv"
+	"time"
 
 	//"crypto/elliptic"
 	//"crypto/rand"
@@ -17,6 +18,7 @@ import (
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
+	"github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/plugin/pkg/tls"
 )
 
@@ -24,9 +26,16 @@ func init() { plugin.Register("tls", setup) }
 
 func setup(c *caddy.Controller) error {
 	err := parseTLS(c)
+    config := dnsserver.GetConfig(c)
 	if err != nil {
 		return plugin.Error("tls", err)
 	}
+    acmeHandler := &ACMEHandler{}
+
+    config.AddPlugin(func(next plugin.Handler) plugin.Handler {
+        acmeHandler.Next = next
+        return acmeHandler
+    }) 
 	return nil
 }
 
@@ -37,8 +46,12 @@ type ACMEManager struct {
 }
 
 // NewACMEManager create a new ACMEManager
-func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
+func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManager {
 	fmt.Println("Start of NewACMEManager")
+
+    if ca == "" {
+        ca = "localhost:14000/dir" //pebble default
+    }
 
 	// TODO: this lets our  acme client trust the pebble cert
 	// this is only needed for testing and should not be in production
@@ -76,12 +89,13 @@ func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
 		Addr: "127.0.0.1:1053",
 	}
 
+
 	acmeIssuerTemplate := certmagic.ACMEIssuer{
 		Agreed:                  true,
 		DisableHTTPChallenge:    true,
 		DisableTLSALPNChallenge: true,
-		CA:                      "localhost:14000/dir",
-		TestCA:                  "localhost:14000/dir",
+		CA:                      ca,
+		TestCA:                  ca,
 		Email:                   "test@test.test",
 		DNS01Solver:             solver,
 		TrustedRoots:            pool,
@@ -130,6 +144,7 @@ func parseTLS(c *caddy.Controller) error {
 			ctx := context.Background()
 
 			var domainNameACME string
+            var ca string
 			for c.NextBlock() {
 				fmt.Println("ACME Config Block Found")
 				token := c.Val()
@@ -141,38 +156,59 @@ func parseTLS(c *caddy.Controller) error {
 						return plugin.Error("tls", c.Errf("To many arguments to domain"))
 					}
 					domainNameACME = domainArgs[0]
-					fmt.Println(domainNameACME)
+				case "ca":
+					fmt.Println("Found Keyword CA")
+					caArgs := c.RemainingArgs()
+					if len(caArgs) > 1 {
+						return plugin.Error("tls", c.Errf("To many arguments to ca"))
+					}
+					ca = caArgs[0]
 				default:
 					return c.Errf("unknown argument to acme '%s'", token)
 				}
 			}
 
-			manager := NewACMEManager(config, domainNameACME)
-
-            //  solver := certmagic.DNS01Solver{
-            //}
+			manager := NewACMEManager(config, domainNameACME, ca)
 
             var names []string
             names = append(names, manager.Zone)
-			err := manager.Config.ManageSync(ctx, names)
-			if err != nil {
-				return c.Errf("failed to Obtain Cert '%v'", err)
-			}
+            manager.Config.RenewalWindowRatio = 0.9
+            err := manager.Config.ManageAsync(ctx, names)
+            if err != nil {
+                log.Errorf("Error in ManageAsync '%v'", err)
+            }
 
-			// TODO: start using the obtained certificate
+			// start using the obtained certificate
+            certFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
+            keyFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.key"
+            var certBytes []byte
+            var keyBytes []byte
+
+            for {
+                // obtaining a certificate happens asynchronous
+                // if the certfile is present we are good to go 
+                // if not we wait
+                _, err = os.ReadFile(certFile)
+                if err != nil {
+                    time.Sleep(1 * time.Second)
+                    continue
+                }
+                break
+            }
 			fmt.Println("Starting to configure Certificate")
-			certFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
-			keyFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.key"
-			certByes, err := os.ReadFile(certFile)
+			certBytes, err = os.ReadFile(certFile)
 			if err != nil {
 				return c.Errf("failed to Read Cert '%v'", err)
 			}
-			keyBytes, err := os.ReadFile(keyFile)
+			keyBytes, err = os.ReadFile(keyFile)
 			if err != nil {
 				return c.Errf("failed to Read Key '%v'", err)
 			}
 
-			cert, err := ctls.X509KeyPair(certByes, keyBytes)
+			cert, err := ctls.X509KeyPair(certBytes, keyBytes)
+			if err != nil {
+				return c.Errf("failed to Load Key Pair'%v'", err)
+			}
 			tlsconf := &ctls.Config{
 				Certificates: []ctls.Certificate{cert},
 			}
@@ -193,6 +229,8 @@ func parseTLS(c *caddy.Controller) error {
 
             // TODO: change DNSSolver config so that the 
             // acutal CoreDNS Server is used for further ACME Challenges
+            solverCoreDNS := &CoreDNSSolver{}
+            manager.Issuer.DNS01Solver = solverCoreDNS
 
 			fmt.Println("End of ACME config parsing")
 		} else {
