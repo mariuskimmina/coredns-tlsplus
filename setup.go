@@ -3,6 +3,8 @@ package tls
 import (
 	"context"
 	"crypto/ecdsa"
+	"strconv"
+
 	//"crypto/elliptic"
 	//"crypto/rand"
 	ctls "crypto/tls"
@@ -62,8 +64,15 @@ func NewACMEManager(config *dnsserver.Config, zone string) *ACMEManager {
 	}
 	pool.AddCert(cert)
 
+    portNumber, err := strconv.Atoi(config.Port)
+	if err != nil {
+		fmt.Println(err)
+		panic("Failed to convert config.Port to integer")
+	}
+
 	//TODO: the address cannot be hardcoded
 	solver := &DNSSolver{
+        Port: portNumber,
 		Addr: "127.0.0.1:1053",
 	}
 

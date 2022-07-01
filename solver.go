@@ -14,6 +14,7 @@ import (
 )
 
 type DNSSolver struct {
+    Port int
 	Addr string
 	DNS  *ACMEServer
 }
@@ -94,7 +95,7 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 	d.DNS = acmeServer
 
 	addr := net.UDPAddr{
-		Port: 1053,
+		Port: d.Port,
 		IP:   net.ParseIP("0.0.0.0"),
 	}
 
