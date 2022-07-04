@@ -6,6 +6,6 @@
     "privateKey": "test/certs/localhost/key.pem",
     "ocspResponderURL": "",
     "externalAccountBindingRequired": false,
-    "certificateValidityPeriod": 50
+    "certificateValidityPeriod": 60
   }
 }

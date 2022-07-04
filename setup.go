@@ -3,7 +3,7 @@ package tls
 import (
 	"context"
 	"crypto/ecdsa"
-	"strconv"
+	"sync"
 	"time"
 
 	//"crypto/elliptic"
@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/caddyserver/certmagic"
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
@@ -39,86 +38,10 @@ func setup(c *caddy.Controller) error {
 	return nil
 }
 
-type ACMEManager struct {
-	Config *certmagic.Config     //Configs for Serving
-	Issuer *certmagic.ACMEIssuer //The ACME Client
-	Zone   string                //The Domain
-}
+var (
+	once, shutOnce sync.Once
+)
 
-// NewACMEManager create a new ACMEManager
-func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManager {
-	fmt.Println("Start of NewACMEManager")
-
-    if ca == "" {
-        ca = "localhost:14000/dir" //pebble default
-    }
-
-	// TODO: this lets our  acme client trust the pebble cert
-	// this is only needed for testing and should not be in production
-	// figure out how to only do this in test cases
-	certbytes, err := os.ReadFile("test/certs/pebble.minica.pem")
-	if err != nil {
-		fmt.Println(err.Error())
-		panic("Failed to load Cert")
-	}
-	pemcert, _ := pem.Decode(certbytes)
-	if pemcert == nil {
-		fmt.Println("pemcert not found")
-	}
-	cert, err := x509.ParseCertificate(pemcert.Bytes)
-	if err != nil {
-		fmt.Println(err)
-		panic("Failed to parse Cert")
-	}
-	pool, err := x509.SystemCertPool()
-	if err != nil {
-		fmt.Println(err)
-		panic("Failed to get system Certpool")
-	}
-	pool.AddCert(cert)
-
-    portNumber, err := strconv.Atoi(config.Port)
-	if err != nil {
-		fmt.Println(err)
-		panic("Failed to convert config.Port to integer")
-	}
-
-	//TODO: the address cannot be hardcoded
-	solver := &DNSSolver{
-        Port: portNumber,
-		Addr: "127.0.0.1:1053",
-	}
-
-
-	acmeIssuerTemplate := certmagic.ACMEIssuer{
-		Agreed:                  true,
-		DisableHTTPChallenge:    true,
-		DisableTLSALPNChallenge: true,
-		CA:                      ca,
-		TestCA:                  ca,
-		Email:                   "test@test.test",
-		DNS01Solver:             solver,
-		TrustedRoots:            pool,
-	}
-
-	acmeConfigTemplate := NewCertmagicConfig()
-	cache := certmagic.NewCache(certmagic.CacheOptions{
-		GetConfigForCert: func(cert certmagic.Certificate) (*certmagic.Config, error) {
-			return acmeConfigTemplate, nil
-		},
-	})
-	acmeConfig := certmagic.New(cache, *acmeConfigTemplate)
-	acmeIssuer := certmagic.NewACMEIssuer(acmeConfig, acmeIssuerTemplate)
-	acmeConfig.Issuers = append(acmeConfig.Issuers, acmeIssuer)
-
-	fmt.Println("End of NewACMEManager")
-	return &ACMEManager{
-		Config: acmeConfig,
-		Issuer: acmeIssuer,
-		Zone:   zone,
-	}
-
-}
 
 func parseTLS(c *caddy.Controller) error {
 	fmt.Println("Start of parseTLS")
@@ -132,10 +55,8 @@ func parseTLS(c *caddy.Controller) error {
 	}
 	i := 1
 	for c.Next() {
-		fmt.Printf("Run number: %d \n", i)
 		i++
 		args := c.RemainingArgs()
-		fmt.Printf("remaining args: %s \n", args)
 
 		if args[0] == "acme" {
 			// start of the acme flow,
@@ -172,17 +93,17 @@ func parseTLS(c *caddy.Controller) error {
 
             var names []string
             names = append(names, manager.Zone)
-            manager.Config.RenewalWindowRatio = 0.9
-            err := manager.Config.ManageAsync(ctx, names)
+            manager.Config.RenewalWindowRatio = 0.5
+            err = manager.ManageCert(ctx, names)
             if err != nil {
                 log.Errorf("Error in ManageAsync '%v'", err)
             }
 
 			// start using the obtained certificate
             certFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
-            keyFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.key"
-            var certBytes []byte
-            var keyBytes []byte
+            //keyFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.key"
+            //var certBytes []byte
+            //var keyBytes []byte
 
             for {
                 // obtaining a certificate happens asynchronous
@@ -195,23 +116,23 @@ func parseTLS(c *caddy.Controller) error {
                 }
                 break
             }
-			fmt.Println("Starting to configure Certificate")
-			certBytes, err = os.ReadFile(certFile)
-			if err != nil {
-				return c.Errf("failed to Read Cert '%v'", err)
-			}
-			keyBytes, err = os.ReadFile(keyFile)
-			if err != nil {
-				return c.Errf("failed to Read Key '%v'", err)
-			}
+			//fmt.Println("Starting to configure Certificate")
+			//certBytes, err = os.ReadFile(certFile)
+			//if err != nil {
+				//return c.Errf("failed to Read Cert '%v'", err)
+			//}
+			//keyBytes, err = os.ReadFile(keyFile)
+			//if err != nil {
+				//return c.Errf("failed to Read Key '%v'", err)
+			//}
 
-			cert, err := ctls.X509KeyPair(certBytes, keyBytes)
-			if err != nil {
-				return c.Errf("failed to Load Key Pair'%v'", err)
-			}
-			tlsconf := &ctls.Config{
-				Certificates: []ctls.Certificate{cert},
-			}
+			//cert, err := ctls.X509KeyPair(certBytes, keyBytes)
+			//if err != nil {
+				//return c.Errf("failed to Load Key Pair'%v'", err)
+			//}
+			//tlsconf := &ctls.Config{
+				//Certificates: []ctls.Certificate{cert},
+			//}
 			//var newArgs []string
 			//newArgs = append(newArgs, cert)
 			//newArgs = append(newArgs, key)
@@ -221,16 +142,35 @@ func parseTLS(c *caddy.Controller) error {
 			//return err
 			//}
 			//fmt.Println("Starting to set TLSConf")
-			//configureTLS(config, tlsconf, clientAuth)
+            tlsconf, err = configureTLSwithACME(ctx, manager)
+            config.TLSConfig = tlsconf
+			//if err != nil {
+				//return c.Errf("Error configuring TLS '%v'", err)
+			//}
 			//tlsconf.ClientAuth = clientAuth
 			// NewTLSConfigs only sets RootCAs, so we need to let ClientCAs refer to it.
 			//tlsconf.ClientCAs = tlsconf.RootCAs
-			config.TLSConfig = tlsconf
+			//config.TLSConfig = tlsconf
 
             // TODO: change DNSSolver config so that the 
             // acutal CoreDNS Server is used for further ACME Challenges
             solverCoreDNS := &CoreDNSSolver{}
             manager.Issuer.DNS01Solver = solverCoreDNS
+            //once.Do(func() {
+                //caddy.RegisterEventHook("updateCert", hook)
+            //})
+            go func() {
+                for {
+                    time.Sleep(30 * time.Second)
+                    fmt.Println("Renewing Certificate")
+                    //manager.RenewCert(ctx, manager.Zone)
+                    tlsconf, err = configureTLSwithACME(ctx, manager)
+                    if err != nil {
+                        fmt.Printf("Error during configureTLSwithACME: %v \n", err)
+                    }
+                    config.TLSConfig = tlsconf
+                }
+            }()
 
 			fmt.Println("End of ACME config parsing")
 		} else {
