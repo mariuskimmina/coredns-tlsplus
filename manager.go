@@ -25,7 +25,7 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManag
 	fmt.Println("Start of NewACMEManager")
 
     if ca == "" {
-        ca = "localhost:14000/dir" //pebble default
+        ca = "localhost:14001/dir" //pebble default
     }
 
 	// TODO: this lets our  acme client trust the pebble cert
@@ -103,11 +103,16 @@ func (a *ACMEManager) GetCert(zone string) error {
 }
 
 func (a *ACMEManager) ManageCert(ctx context.Context, zone []string) error {
-	err := a.Config.ManageAsync(ctx, zone)
+	err := a.Config.ManageSync(ctx, zone)
 	return err
 }
 
 func (a *ACMEManager) RenewCert(ctx context.Context, zone string) error {
 	err := a.Config.RenewCertSync(ctx, zone, false)
 	return err
+}
+
+func (a *ACMEManager) CacheCertificate(ctx context.Context, zone string) (certmagic.Certificate, error) {
+	cert, err := a.Config.CacheManagedCertificate(ctx, zone)
+	return cert, err
 }

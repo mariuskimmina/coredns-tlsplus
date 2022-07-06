@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	//"crypto/elliptic"
-	//"crypto/rand"
 	ctls "crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -39,6 +37,7 @@ func setup(c *caddy.Controller) error {
 }
 
 var (
+    r              = renewCert{quit: make(chan bool)}
 	once, shutOnce sync.Once
 )
 
@@ -96,7 +95,7 @@ func parseTLS(c *caddy.Controller) error {
             manager.Config.RenewalWindowRatio = 0.5
             err = manager.ManageCert(ctx, names)
             if err != nil {
-                log.Errorf("Error in ManageAsync '%v'", err)
+                log.Errorf("Error in ManageCert '%v'", err)
             }
 
 			// start using the obtained certificate
@@ -116,61 +115,29 @@ func parseTLS(c *caddy.Controller) error {
                 }
                 break
             }
-			//fmt.Println("Starting to configure Certificate")
-			//certBytes, err = os.ReadFile(certFile)
-			//if err != nil {
-				//return c.Errf("failed to Read Cert '%v'", err)
-			//}
-			//keyBytes, err = os.ReadFile(keyFile)
-			//if err != nil {
-				//return c.Errf("failed to Read Key '%v'", err)
-			//}
 
-			//cert, err := ctls.X509KeyPair(certBytes, keyBytes)
-			//if err != nil {
-				//return c.Errf("failed to Load Key Pair'%v'", err)
-			//}
-			//tlsconf := &ctls.Config{
-				//Certificates: []ctls.Certificate{cert},
-			//}
-			//var newArgs []string
-			//newArgs = append(newArgs, cert)
-			//newArgs = append(newArgs, key)
-
-			//tlsconf, err = tls.NewTLSConfigFromArgs(newArgs...)
-			//if err != nil {
-			//return err
-			//}
-			//fmt.Println("Starting to set TLSConf")
             tlsconf, err = configureTLSwithACME(ctx, manager)
             config.TLSConfig = tlsconf
-			//if err != nil {
-				//return c.Errf("Error configuring TLS '%v'", err)
-			//}
-			//tlsconf.ClientAuth = clientAuth
-			// NewTLSConfigs only sets RootCAs, so we need to let ClientCAs refer to it.
-			//tlsconf.ClientCAs = tlsconf.RootCAs
-			//config.TLSConfig = tlsconf
 
-            // TODO: change DNSSolver config so that the 
-            // acutal CoreDNS Server is used for further ACME Challenges
+            // a CoreDNSSolver doesn't actually do anything because CoreDNS is 
+            // already up and running and has a handler to solve the ACME Challenge,
+            // there is nothing left for the solver to do, but we still need to
+            // set it. If we don't set it the other solver would stil try to start
+            // a dns.Server.
             solverCoreDNS := &CoreDNSSolver{}
             manager.Issuer.DNS01Solver = solverCoreDNS
-            //once.Do(func() {
-                //caddy.RegisterEventHook("updateCert", hook)
-            //})
-            go func() {
-                for {
-                    time.Sleep(30 * time.Second)
-                    fmt.Println("Renewing Certificate")
-                    //manager.RenewCert(ctx, manager.Zone)
-                    tlsconf, err = configureTLSwithACME(ctx, manager)
-                    if err != nil {
-                        fmt.Printf("Error during configureTLSwithACME: %v \n", err)
-                    }
-                    config.TLSConfig = tlsconf
-                }
-            }()
+
+            // this part is taken from to the reload plugin
+            once.Do(func() {
+                caddy.RegisterEventHook("updateCert", hook)
+            })
+            shutOnce.Do(func() {
+                c.OnFinalShutdown(func() error {
+                    r.quit <- true
+                    return nil
+                })
+            })
+
 
 			fmt.Println("End of ACME config parsing")
 		} else {

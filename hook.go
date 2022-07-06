@@ -2,11 +2,19 @@ package tls
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/coredns/caddy"
 )
 
+type renewCert struct {
+	mtx  sync.RWMutex
+	quit chan bool
+}
+
+
+// restarting CoreDNS is necessary when a cert is to be renewed
 func hook(event caddy.EventName, info interface{}) error {
 	if event != caddy.InstanceStartupEvent {
 		return nil
@@ -17,7 +25,7 @@ func hook(event caddy.EventName, info interface{}) error {
 	
 
 	go func() {
-        tick := time.NewTicker(20 * time.Second)
+        tick := time.NewTicker(40 * time.Second)
 
 		for {
 			select {
@@ -27,7 +35,13 @@ func hook(event caddy.EventName, info interface{}) error {
 				if err != nil {
 					continue
 				}
-                instance.Restart(corefile)
+                _, err = instance.Restart(corefile)
+				if err != nil {
+                    fmt.Printf("Error during Restart: %v, \n", err)
+				}
+                return
+            case <-r.quit:
+				return
 			}
 		}
 	}()

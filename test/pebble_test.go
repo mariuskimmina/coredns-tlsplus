@@ -220,7 +220,7 @@ func TestRenewal(t *testing.T) {
 			}
 
             // wait for certificate to expire
-            time.Sleep(80 * time.Second)
+            time.Sleep(70 * time.Second)
 
 			r, _, err := client.Exchange(m, tcp)
 
