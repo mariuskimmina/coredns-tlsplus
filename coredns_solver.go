@@ -7,15 +7,15 @@ import (
 	"github.com/mholt/acmez/acme"
 )
 
+// a CoreDNSSolver doesn't actually do anything (other than 
+// fullfilling the acmez.Solver interface) because CoreDNS is 
+// already up and running and has a handler to solve the ACME Challenge,
+// there is nothing left for the solver to do, but we still need to
+// set it. If we don't set it the other solver would stil try to start
+// a dns.Server.
 type CoreDNSSolver struct {
 }
 
-
-// Present is called just before a challenge is initiated.
-// The implementation MUST prepare anything that is necessary
-// for completing the challenge
-// for CoreDNS that means that we need to start the DNS Server,
-// serve exactly one request and
 func (d *CoreDNSSolver) Present(ctx context.Context, challenge acme.Challenge) error {
 	fmt.Println("Start of CoreDNSSover Present !")
 	fmt.Println("End of CoreDNSSover Present !")
@@ -28,10 +28,6 @@ func (d *CoreDNSSolver) Wait(ctx context.Context, challenge acme.Challenge) erro
 	return nil
 }
 
-// CleanUp is called after a challenge is finished, whether
-// successful or not. It MUST free/remove any resources it
-// allocated/created during Present. It SHOULD NOT require
-// that Present ran successfully. It MUST return quickly.
 func (d *CoreDNSSolver) CleanUp(ctx context.Context, challenge acme.Challenge) error {
 	fmt.Println("Start of CoreDNSSolver CleanUp!")
 	fmt.Println("End of CoreDNSSolver CleanUp!")

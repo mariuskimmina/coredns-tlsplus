@@ -2,14 +2,12 @@ package tls
 
 import (
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/coredns/caddy"
 )
 
 type renewCert struct {
-	mtx  sync.RWMutex
 	quit chan bool
 }
 
@@ -30,7 +28,7 @@ func hook(event caddy.EventName, info interface{}) error {
 		for {
 			select {
 			case <-tick.C:
-                fmt.Println("RELOADING!!!!")
+                fmt.Println("Start of reload")
                 corefile, err := caddy.LoadCaddyfile(instance.Caddyfile().ServerType())
 				if err != nil {
 					continue
@@ -39,8 +37,10 @@ func hook(event caddy.EventName, info interface{}) error {
 				if err != nil {
                     fmt.Printf("Error during Restart: %v, \n", err)
 				}
+                fmt.Println("End of reload")
                 return
             case <-r.quit:
+                fmt.Println("Certificate renewal quit")
 				return
 			}
 		}

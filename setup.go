@@ -41,10 +41,16 @@ var (
 	once, shutOnce sync.Once
 )
 
+const (
+    argDomain = "domain"
+    argCa = "ca"
+)
+
 
 func parseTLS(c *caddy.Controller) error {
 	fmt.Println("Start of parseTLS")
 	config := dnsserver.GetConfig(c)
+
 	var tlsconf *ctls.Config
 	var err error
 	clientAuth := ctls.NoClientCert
@@ -69,14 +75,14 @@ func parseTLS(c *caddy.Controller) error {
 				fmt.Println("ACME Config Block Found")
 				token := c.Val()
 				switch token {
-				case "domain":
+				case argDomain:
 					fmt.Println("Found Keyword Domain")
 					domainArgs := c.RemainingArgs()
 					if len(domainArgs) > 1 {
 						return plugin.Error("tls", c.Errf("To many arguments to domain"))
 					}
 					domainNameACME = domainArgs[0]
-				case "ca":
+				case argCa:
 					fmt.Println("Found Keyword CA")
 					caArgs := c.RemainingArgs()
 					if len(caArgs) > 1 {
@@ -128,6 +134,8 @@ func parseTLS(c *caddy.Controller) error {
             manager.Issuer.DNS01Solver = solverCoreDNS
 
             // this part is taken from to the reload plugin
+            // basically we need to restart/reload CoreDNS whenever
+            // a certificate has been renewed
             once.Do(func() {
                 caddy.RegisterEventHook("updateCert", hook)
             })
