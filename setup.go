@@ -115,6 +115,7 @@ func parseTLS(c *caddy.Controller) error {
                 if counter >= 5 {
                     break
                 }
+
                 // obtaining a certificate happens asynchronous
                 // if the certfile is present we are good to go 
                 // if not we wait
@@ -142,6 +143,7 @@ func parseTLS(c *caddy.Controller) error {
             // this part is taken from to the reload plugin
             // basically we need to restart/reload CoreDNS whenever
             // a certificate has been renewed
+            fmt.Println("Registering Hook")
             once.Do(func() {
                 caddy.RegisterEventHook("updateCert", hook)
             })
