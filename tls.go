@@ -27,23 +27,27 @@ func configureTLSwithACME(ctx context.Context, acmeManager *ACMEManager) (*tls.C
     // try loading existing certificate
 	cert, err = acmeManager.Config.CacheManagedCertificate(ctx, acmeManager.Zone)
 	if err != nil {
-        fmt.Println("OBTAIN")
+        fmt.Println("obtaining a cert")
         if !errors.Is(err, fs.ErrNotExist) {
+            fmt.Println(err)
 			return nil, err
 		}
         acmeManager.GetCert(acmeManager.Zone)
         if err != nil {
+            fmt.Println(err)
             return nil, err
         }
         cert, err = acmeManager.CacheCertificate(ctx, acmeManager.Zone)
         if err != nil {
+            fmt.Println(err)
             return nil, err
         }
 	}
 
+    fmt.Println("Loaded a certificate, lets see if it needs renewal")
     // check if renewal is required
     if cert.NeedsRenewal(acmeManager.Config) {
-        fmt.Println("RENEWAL")
+        fmt.Println("renewing a cert")
         var err error
         err = acmeManager.RenewCert(ctx, acmeManager.Zone)
         if err != nil {
