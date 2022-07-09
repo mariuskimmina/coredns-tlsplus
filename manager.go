@@ -64,6 +64,7 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManag
 		Addr: "127.0.0.1:1053",
 	}
 
+    certmagic.DefaultACME.Email = "test@test.test"
 
 	acmeIssuerTemplate := certmagic.ACMEIssuer{
 		Agreed:                  true,
