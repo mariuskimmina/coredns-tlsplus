@@ -109,15 +109,22 @@ func parseTLS(c *caddy.Controller) error {
             //var certBytes []byte
             //var keyBytes []byte
 
+            counter := 0
             for {
+                fmt.Println("Waiting for Certificate")
+                if counter >= 5 {
+                    break
+                }
                 // obtaining a certificate happens asynchronous
                 // if the certfile is present we are good to go 
                 // if not we wait
                 _, err = os.ReadFile(certFile)
                 if err != nil {
+                    counter = counter + 1
                     time.Sleep(1 * time.Second)
                     continue
                 }
+                fmt.Println("Done waiting for certificate")
                 break
             }
 
