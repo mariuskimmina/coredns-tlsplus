@@ -105,7 +105,7 @@ func (a *ACMEManager) GetCert(zone string) error {
 
 func (a *ACMEManager) ManageCert(ctx context.Context, zone []string) error {
 	fmt.Println("Start of ManageCert")
-	err := a.Config.ManageSync(ctx, zone)
+	err := a.Config.ManageAsync(ctx, zone)
 	fmt.Println("End of ManageCert")
 	return err
 }

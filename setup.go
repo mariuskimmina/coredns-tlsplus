@@ -98,7 +98,6 @@ func parseTLS(c *caddy.Controller) error {
 
             var names []string
             names = append(names, manager.Zone)
-            manager.Config.RenewalWindowRatio = 0.5
             err = manager.ManageCert(ctx, names)
             if err != nil {
                 log.Errorf("Error in ManageCert '%v'", err)
