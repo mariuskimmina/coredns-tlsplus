@@ -10,12 +10,13 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"os"
 
+	"github.com/caddyserver/certmagic"
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
-	"github.com/coredns/coredns/plugin/pkg/log"
+
+	//"github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/plugin/pkg/tls"
 )
 
@@ -37,13 +38,14 @@ func setup(c *caddy.Controller) error {
 }
 
 var (
-    r              = renewCert{quit: make(chan bool)}
+    r              = renewCert{quit: make(chan bool), renew: make(chan bool)}
 	once, shutOnce sync.Once
 )
 
 const (
     argDomain = "domain"
     argCa = "ca"
+    argCertPath = "certpath"
 )
 
 
@@ -52,6 +54,7 @@ func parseTLS(c *caddy.Controller) error {
 	config := dnsserver.GetConfig(c)
 
 	var tlsconf *ctls.Config
+    var cert *certmagic.Certificate
 	var err error
 	clientAuth := ctls.NoClientCert
 
@@ -65,12 +68,16 @@ func parseTLS(c *caddy.Controller) error {
 
 		if args[0] == "acme" {
 			// start of the acme flow,
-			fmt.Println("Starting ACME")
+
+            //check if cert is present and valid 
+
 
 			ctx := context.Background()
 
 			var domainNameACME string
             var ca string
+            //certPath := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
+
 			for c.NextBlock() {
 				fmt.Println("ACME Config Block Found")
 				token := c.Val()
@@ -89,47 +96,54 @@ func parseTLS(c *caddy.Controller) error {
 						return plugin.Error("tls", c.Errf("To many arguments to ca"))
 					}
 					ca = caArgs[0]
+				case argCertPath:
+					fmt.Println("Found Keyword CertPath")
+					certPathArgs := c.RemainingArgs()
+					if len(certPathArgs) > 1 {
+						return plugin.Error("tls", c.Errf("To many arguments to CertPath"))
+					}
+					certPath = certPathArgs[0]
 				default:
 					return c.Errf("unknown argument to acme '%s'", token)
 				}
 			}
+			fmt.Println("Starting ACME")
 
 			manager := NewACMEManager(config, domainNameACME, ca)
 
             var names []string
             names = append(names, manager.Zone)
-            err = manager.ManageCert(ctx, names)
-            if err != nil {
-                log.Errorf("Error in ManageCert '%v'", err)
-            }
+            //err = manager.ManageCert(ctx, names)
+            //if err != nil {
+                //log.Errorf("Error in ManageCert '%v'", err)
+            //}
 
 			// start using the obtained certificate
-            certFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
             //keyFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.key"
             //var certBytes []byte
             //var keyBytes []byte
 
-            counter := 0
-            for {
-                fmt.Println("Waiting for Certificate")
-                if counter >= 5 {
-                    break
-                }
+            //counter := 0
+            //for {
+                //fmt.Println("Waiting for Certificate")
+                //if counter >= 5 {
+                    //break
+                //}
 
                 // obtaining a certificate happens asynchronous
                 // if the certfile is present we are good to go 
                 // if not we wait
-                _, err = os.ReadFile(certFile)
-                if err != nil {
-                    counter = counter + 1
-                    time.Sleep(1 * time.Second)
-                    continue
-                }
-                fmt.Println("Done waiting for certificate")
-                break
-            }
+                //_, err = os.ReadFile(certPath)
+                //if err != nil {
+                    //counter = counter + 1
+                    //time.Sleep(1 * time.Second)
+                    //continue
+                //}
+                //fmt.Println("Done waiting for certificate")
+                //break
+            //}
 
-            tlsconf, err = configureTLSwithACME(ctx, manager)
+            tlsconf, cert, err = manager.configureTLSwithACME(ctx)
             config.TLSConfig = tlsconf
 
             // a CoreDNSSolver doesn't actually do anything because CoreDNS is 
@@ -139,6 +153,16 @@ func parseTLS(c *caddy.Controller) error {
             // a dns.Server.
             solverCoreDNS := &CoreDNSSolver{}
             manager.Issuer.DNS01Solver = solverCoreDNS
+
+            // start a loop that checks for renewals
+            go func() {
+                for {
+                    time.Sleep(40 * time.Second)
+                    if cert.NeedsRenewal(manager.Config) {
+                        r.renew <- true
+                    }
+                }
+            }()
 
             // this part is taken from to the reload plugin
             // basically we need to restart/reload CoreDNS whenever

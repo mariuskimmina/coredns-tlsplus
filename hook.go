@@ -2,13 +2,13 @@ package tls
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/coredns/caddy"
 )
 
 type renewCert struct {
 	quit chan bool
+	renew chan bool
 }
 
 
@@ -23,11 +23,10 @@ func hook(event caddy.EventName, info interface{}) error {
 	
 
 	go func() {
-        tick := time.NewTicker(40 * time.Second)
-
 		for {
 			select {
-			case <-tick.C:
+			case <-r.renew:
+                fmt.Println("Cert needs to be renewed")
                 fmt.Println("Start of reload")
                 corefile, err := caddy.LoadCaddyfile(instance.Caddyfile().ServerType())
 				if err != nil {

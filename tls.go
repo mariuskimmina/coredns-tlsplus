@@ -18,7 +18,7 @@ func configureTLS(conf *dnsserver.Config, tlsconf *tls.Config, clientAuth tls.Cl
 	conf.TLSConfig = tlsconf
 }
 
-func configureTLSwithACME(ctx context.Context, acmeManager *ACMEManager) (*tls.Config, error) {
+func configureTLSwithACME(ctx context.Context, acmeManager *ACMEManager) (*tls.Config, *certmagic.Certificate, error) {
     fmt.Println("Start of configureTLSwithACME")
 
     var cert certmagic.Certificate
@@ -30,17 +30,17 @@ func configureTLSwithACME(ctx context.Context, acmeManager *ACMEManager) (*tls.C
         fmt.Println("obtaining a cert")
         if !errors.Is(err, fs.ErrNotExist) {
             fmt.Println(err)
-			return nil, err
+			return nil, nil, err
 		}
         acmeManager.GetCert(acmeManager.Zone)
         if err != nil {
             fmt.Println(err)
-            return nil, err
+            return nil, nil, err
         }
         cert, err = acmeManager.CacheCertificate(ctx, acmeManager.Zone)
         if err != nil {
             fmt.Println(err)
-            return nil, err
+            return nil, nil, err
         }
 	}
 
@@ -51,12 +51,12 @@ func configureTLSwithACME(ctx context.Context, acmeManager *ACMEManager) (*tls.C
         var err error
         err = acmeManager.RenewCert(ctx, acmeManager.Zone)
         if err != nil {
-            return nil, fmt.Errorf("%s: renewing certificate: %w", acmeManager.Zone, err)
+            return nil, nil, fmt.Errorf("%s: renewing certificate: %w", acmeManager.Zone, err)
         }
         // successful renewal, so update in-memory cache
         cert, err = acmeManager.CacheCertificate(ctx, acmeManager.Zone)
         if err != nil {
-            return nil, fmt.Errorf("%s: reloading renewed certificate into memory: %v", acmeManager.Zone, err)
+            return nil, nil, fmt.Errorf("%s: reloading renewed certificate into memory: %v", acmeManager.Zone, err)
         }
     } else {
         fmt.Println("No Renewal needed, keep going")
@@ -76,5 +76,5 @@ func configureTLSwithACME(ctx context.Context, acmeManager *ACMEManager) (*tls.C
 	tlsConfig.ClientCAs = tlsConfig.RootCAs
 
     fmt.Println("End of configureTLSwithACME")
-    return tlsConfig, nil
+    return tlsConfig, &cert, nil
 }
