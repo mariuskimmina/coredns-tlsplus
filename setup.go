@@ -155,6 +155,7 @@ func parseTLS(c *caddy.Controller) error {
             manager.Issuer.DNS01Solver = solverCoreDNS
 
             // start a loop that checks for renewals
+            //r.renew <- false
             go func() {
                 fmt.Println("Starting renewal checker loop")
                 for {
@@ -163,6 +164,7 @@ func parseTLS(c *caddy.Controller) error {
                     if cert.NeedsRenewal(manager.Config) {
                         fmt.Println("initialize renewal")
                         r.renew <- true
+                        break
                     } else {
                         fmt.Println("no renewal needed")
                     }
