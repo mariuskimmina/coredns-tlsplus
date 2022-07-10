@@ -102,7 +102,7 @@ func parseTLS(c *caddy.Controller) error {
 					if len(certPathArgs) > 1 {
 						return plugin.Error("tls", c.Errf("To many arguments to CertPath"))
 					}
-					certPath = certPathArgs[0]
+					//certPath = certPathArgs[0]
 				default:
 					return c.Errf("unknown argument to acme '%s'", token)
 				}
@@ -156,10 +156,15 @@ func parseTLS(c *caddy.Controller) error {
 
             // start a loop that checks for renewals
             go func() {
+                fmt.Println("Starting renewal checker loop")
                 for {
                     time.Sleep(40 * time.Second)
+                    fmt.Println("checking renewal")
                     if cert.NeedsRenewal(manager.Config) {
+                        fmt.Println("initialize renewal")
                         r.renew <- true
+                    } else {
+                        fmt.Println("no renewal needed")
                     }
                 }
             }()

@@ -115,8 +115,9 @@ func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *
             fmt.Println(err)
 			return nil, nil, err
 		}
-        am.GetCert(am.Zone)
+        err = am.GetCert(am.Zone)
         if err != nil {
+            fmt.Println("Error while obtaining a cert")
             fmt.Println(err)
             return nil, nil, err
         }
