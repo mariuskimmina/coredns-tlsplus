@@ -10,21 +10,20 @@ import (
 	"github.com/miekg/dns"
 )
 
-
 type ACMEHandler struct {
-    Next plugin.Handler
+	Next plugin.Handler
 }
 
 const (
 	dnsChallengeString   = "_acme-challenge."
 	certificateAuthority = "letsencrypt.org"
-    pluginName = "tlsplus"
+	pluginName           = "tlsplus"
 )
 
 func (h *ACMEHandler) Name() string { return pluginName }
 
 func (h *ACMEHandler) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
-    fmt.Println("Start of tlsplus ServeDNS")
+	fmt.Println("Start of tlsplus ServeDNS")
 	state := request.Request{W: w, Req: r}
 	a := new(dns.Msg)
 	a.SetReply(state.Req)
@@ -34,13 +33,13 @@ func (h *ACMEHandler) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 		zone := strings.ToLower(question.Name)
 		if checkDNSChallenge(zone) {
 			if question.Qtype == dns.TypeTXT {
-                //a.Answer = append(a.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
-                //w.WriteMsg(a)
+				//a.Answer = append(a.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
+				//w.WriteMsg(a)
 			}
 		}
 	}
 
-    fmt.Println("End of tlsplus ServeDNS")
+	fmt.Println("End of tlsplus ServeDNS")
 	return h.Next.ServeDNS(ctx, w, r)
 }
 

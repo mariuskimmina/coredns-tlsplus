@@ -35,7 +35,7 @@ import (
 //			name: "Test manual cert and key",
 //			config: `tls://.:1053 {
 //                tls test2_cert.pem test2_key.pem
-//                whoami  
+//                whoami
 //            }`,
 //			Qname:        "example.com.",
 //			Qtype:        dns.TypeA,
@@ -51,7 +51,7 @@ import (
 //                    domain example.com
 //                    ca     localhost:14000/dir
 //                }
-//                whoami  
+//                whoami
 //            }`,
 //			Qname:        "example.com.",
 //			Qtype:        dns.TypeTXT,
@@ -67,7 +67,7 @@ import (
 //                    domain example.com
 //                    ca     localhost:14000/dir
 //                }
-//                forward . 8.8.8.8  
+//                forward . 8.8.8.8
 //            }`,
 //			Qname:        "example.com.",
 //			Qtype:        dns.TypeA,
@@ -128,15 +128,14 @@ import (
 //	}
 //}
 
-
 func TestRenewal(t *testing.T) {
 	certmagicDataPath := "/home/marius/.local/share/certmagic"
 	pebbleTestConfig := "test/config/pebble-config-short.json"
 	pebbleStrictMode := false
 	resolverAddress := "127.0.0.1:1053"
 
-    // add pebble as a trusted CA
-    certbytes, err := os.ReadFile("test/certs/pebble.minica.pem")
+	// add pebble as a trusted CA
+	certbytes, err := os.ReadFile("test/certs/pebble.minica.pem")
 	if err != nil {
 		fmt.Println(err.Error())
 		panic("Failed to load Cert")
@@ -158,8 +157,6 @@ func TestRenewal(t *testing.T) {
 	}
 	pool.AddCert(cert)
 
-
-
 	testcases := []struct {
 		name            string
 		config          string
@@ -169,7 +166,7 @@ func TestRenewal(t *testing.T) {
 		Answer          []dns.RR
 		AnswerLength    int
 		WhoAmI          bool
-        ExpectedIP      string
+		ExpectedIP      string
 	}{
 		{
 			name: "Test ACME whoami",
@@ -185,7 +182,7 @@ func TestRenewal(t *testing.T) {
 			Answer:       []dns.RR{},
 			AnswerLength: 0,
 			WhoAmI:       true,
-            ExpectedIP:   "",
+			ExpectedIP:   "",
 		},
 	}
 	go func() {
@@ -208,26 +205,26 @@ func TestRenewal(t *testing.T) {
 			m := new(dns.Msg)
 			m.SetQuestion(tc.Qname, tc.Qtype)
 			client := dns.Client{
-				Net:          "tcp-tls",
-				TLSConfig:    &tls.Config{
-                    InsecureSkipVerify: false,
-                    RootCAs: pool,
-                },
+				Net: "tcp-tls",
+				TLSConfig: &tls.Config{
+					InsecureSkipVerify: false,
+					RootCAs:            pool,
+				},
 				Timeout:      5 * time.Second,
 				DialTimeout:  5 * time.Second,
 				ReadTimeout:  5 * time.Second,
 				WriteTimeout: 5 * time.Second,
 			}
 
-            // wait for certificate to expire
-            time.Sleep(170 * time.Second)
+			// wait for certificate to expire
+			time.Sleep(170 * time.Second)
 
-            fmt.Println("TEST: Sending DNS request")
+			fmt.Println("TEST: Sending DNS request")
 			r, _, err := client.Exchange(m, tcp)
 
 			if err != nil {
-                fmt.Println("TEST: Failed sending DNS request")
-                //fmt.Println(err)
+				fmt.Println("TEST: Failed sending DNS request")
+				//fmt.Println(err)
 				//t.Errorf("Could not exchange msg: %s", err)
 			}
 

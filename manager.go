@@ -27,9 +27,9 @@ type ACMEManager struct {
 func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManager {
 	fmt.Println("Start of NewACMEManager")
 
-    if ca == "" {
-        ca = "localhost:14001/dir" //pebble default
-    }
+	if ca == "" {
+		ca = "localhost:14001/dir" //pebble default
+	}
 
 	// TODO: this lets our  acme client trust the pebble cert
 	// this is only needed for testing and should not be in production
@@ -55,7 +55,7 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManag
 	}
 	pool.AddCert(cert)
 
-    portNumber, err := strconv.Atoi(config.Port)
+	portNumber, err := strconv.Atoi(config.Port)
 	if err != nil {
 		fmt.Println(err)
 		panic("Failed to convert config.Port to integer")
@@ -63,11 +63,11 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManag
 
 	//TODO: the address cannot be hardcoded
 	solver := &DNSSolver{
-        Port: portNumber,
+		Port: portNumber,
 		Addr: "127.0.0.1:1053",
 	}
 
-    certmagic.DefaultACME.Email = "test@test.test"
+	certmagic.DefaultACME.Email = "test@test.test"
 
 	acmeIssuerTemplate := certmagic.ACMEIssuer{
 		Agreed:                  true,
@@ -81,9 +81,9 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManag
 	}
 
 	acmeConfigTemplate := NewCertmagicConfig()
-    acmeConfigTemplate.RenewalWindowRatio = 0.5
+	acmeConfigTemplate.RenewalWindowRatio = 0.5
 	cache := certmagic.NewCache(certmagic.CacheOptions{
-        RenewCheckInterval: 5 * time.Second,
+		RenewCheckInterval: 5 * time.Second,
 		GetConfigForCert: func(cert certmagic.Certificate) (*certmagic.Config, error) {
 			return acmeConfigTemplate, nil
 		},
@@ -91,7 +91,7 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManag
 	acmeConfig := certmagic.New(cache, *acmeConfigTemplate)
 	acmeIssuer := certmagic.NewACMEIssuer(acmeConfig, acmeIssuerTemplate)
 	acmeConfig.Issuers = append(acmeConfig.Issuers, acmeIssuer)
-    certmagic.RateLimitEvents = 100
+	certmagic.RateLimitEvents = 100
 
 	fmt.Println("End of NewACMEManager")
 	return &ACMEManager{
@@ -102,65 +102,63 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManag
 }
 
 func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *certmagic.Certificate, error) {
-    fmt.Println("Start of configureTLSwithACME")
+	fmt.Println("Start of configureTLSwithACME")
 
-    var cert certmagic.Certificate
-    var err error
+	var cert certmagic.Certificate
+	var err error
 
-    // try loading existing certificate
+	// try loading existing certificate
 	cert, err = am.Config.CacheManagedCertificate(ctx, am.Zone)
 	if err != nil {
-        fmt.Println("obtaining a cert")
-        if !errors.Is(err, fs.ErrNotExist) {
-            fmt.Println(err)
+		fmt.Println("obtaining a cert")
+		if !errors.Is(err, fs.ErrNotExist) {
+			fmt.Println(err)
 			return nil, nil, err
 		}
-        err = am.GetCert(am.Zone)
-        if err != nil {
-            fmt.Println("Error while obtaining a cert")
-            fmt.Println(err)
-            return nil, nil, err
-        }
-        cert, err = am.CacheCertificate(ctx, am.Zone)
-        if err != nil {
-            fmt.Println(err)
-            return nil, nil, err
-        }
+		err = am.GetCert(am.Zone)
+		if err != nil {
+			fmt.Println("Error while obtaining a cert")
+			fmt.Println(err)
+			return nil, nil, err
+		}
+		cert, err = am.CacheCertificate(ctx, am.Zone)
+		if err != nil {
+			fmt.Println(err)
+			return nil, nil, err
+		}
 	}
 
-    fmt.Println("Loaded a certificate, lets see if it needs renewal")
-    // check if renewal is required
-    if cert.NeedsRenewal(am.Config) {
-        fmt.Println("renewing a cert")
-        var err error
-        err = am.RenewCert(ctx, am.Zone)
-        if err != nil {
-            return nil, nil, fmt.Errorf("%s: renewing certificate: %w", am.Zone, err)
-        }
-        // successful renewal, so update in-memory cache
-        cert, err = am.CacheCertificate(ctx, am.Zone)
-        if err != nil {
-            return nil, nil, fmt.Errorf("%s: reloading renewed certificate into memory: %v", am.Zone, err)
-        }
-    } else {
-        fmt.Println("No Renewal needed, keep going")
-    }
+	fmt.Println("Loaded a certificate, lets see if it needs renewal")
+	// check if renewal is required
+	if cert.NeedsRenewal(am.Config) {
+		fmt.Println("renewing a cert")
+		var err error
+		err = am.RenewCert(ctx, am.Zone)
+		if err != nil {
+			return nil, nil, fmt.Errorf("%s: renewing certificate: %w", am.Zone, err)
+		}
+		// successful renewal, so update in-memory cache
+		cert, err = am.CacheCertificate(ctx, am.Zone)
+		if err != nil {
+			return nil, nil, fmt.Errorf("%s: reloading renewed certificate into memory: %v", am.Zone, err)
+		}
+	} else {
+		fmt.Println("No Renewal needed, keep going")
+	}
 
-    if cert.NeedsRenewal(am.Config) {
-        fmt.Println("RENEWAL failed!!!")
-    } else {
-        fmt.Println("Certificate is ready")
-    }
+	if cert.NeedsRenewal(am.Config) {
+		fmt.Println("RENEWAL failed!!!")
+	} else {
+		fmt.Println("Certificate is ready")
+	}
 
-
-
-    //tlsConfig := acmeManager.Config.TLSConfig()
+	//tlsConfig := acmeManager.Config.TLSConfig()
 	tlsConfig := &tls.Config{Certificates: []tls.Certificate{cert.Certificate}}
 	tlsConfig.ClientAuth = tls.NoClientCert
 	tlsConfig.ClientCAs = tlsConfig.RootCAs
 
-    fmt.Println("End of configureTLSwithACME")
-    return tlsConfig, &cert, nil
+	fmt.Println("End of configureTLSwithACME")
+	return tlsConfig, &cert, nil
 }
 
 func (a *ACMEManager) GetCert(zone string) error {
@@ -168,9 +166,8 @@ func (a *ACMEManager) GetCert(zone string) error {
 	return err
 }
 
-
-// TODO: I don't think I can use the "Manage" Functions if I only want to restart 
-// when a Certificate is being renewed, because the manage functions does not provide this 
+// TODO: I don't think I can use the "Manage" Functions if I only want to restart
+// when a Certificate is being renewed, because the manage functions does not provide this
 // information - I need to use the slightly lower level functions of Obtain and Renew append
 // create the logic that decides when to do these things myself.
 func (a *ACMEManager) ManageCert(ctx context.Context, zone []string) error {

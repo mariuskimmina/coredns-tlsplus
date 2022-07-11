@@ -14,7 +14,7 @@ import (
 )
 
 type DNSSolver struct {
-    Port int
+	Port int
 	Addr string
 	DNS  *ACMEServer
 }
@@ -124,7 +124,7 @@ func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 	case msg := <-d.DNS.readyChan:
 		fmt.Println("Received Message: ", msg)
 	case <-time.After(4 * time.Second):
-        // TODO: What do we do if this takes too long?
+		// TODO: What do we do if this takes too long?
 		fmt.Println("Timeout")
 	}
 	fmt.Println("End of DNSSolver Wait")
