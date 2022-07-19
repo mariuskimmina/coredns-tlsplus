@@ -38,12 +38,13 @@ type (
 	LoopKey struct{}
 )
 
-func (as *ACMEServer) ServePacket(p net.PacketConn, challenge acme.Challenge) error {
+
+func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 	fmt.Println("Start of ACMEServer ServePacket")
 	as.m.Lock()
 	as.server = &dns.Server{PacketConn: p, Net: "udp", Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
 		acme_request := true
-		fmt.Println("ACMEServer Handling DNS Request (UDP)")
+		fmt.Println("ACMEServer Handling DNS Request")
 		state := request.Request{W: w, Req: r}
 		hdr := dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeTXT, Class: dns.ClassANY, Ttl: 0}
 		m := new(dns.Msg)
@@ -70,6 +71,7 @@ func (as *ACMEServer) ServePacket(p net.PacketConn, challenge acme.Challenge) er
 	as.m.Unlock()
 
 	as.readyChan <- "ready"
+	fmt.Println("End of ACMEServer ServePacket")
 	return as.server.ActivateAndServe()
 }
 
@@ -99,15 +101,19 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 		IP:   net.ParseIP("0.0.0.0"),
 	}
 
-	// l, err := net.Listen("tcp", d.Addr)
 	l, err := net.ListenUDP("udp", &addr)
 	if err != nil {
 		fmt.Println("Failed to create Listener")
 		fmt.Println(err)
 	}
 
+	if err != nil {
+		fmt.Println("Failed to create Listener")
+		fmt.Println(err)
+	}
+
 	go func() {
-		err := d.DNS.ServePacket(l, challenge)
+		err := d.DNS.Start(l, challenge)
 		if err != nil {
 			fmt.Println("Received Error from ServePacket")
 			fmt.Println(err)
@@ -126,8 +132,9 @@ func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 	case <-time.After(4 * time.Second):
 		// TODO: What do we do if this takes too long?
 		fmt.Println("Timeout")
+        return nil
 	}
-	fmt.Println("End of DNSSolver Wait")
+    fmt.Println("End of DNSSolver Wait")
 	return nil
 }
 

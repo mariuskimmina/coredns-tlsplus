@@ -2,13 +2,10 @@ package tls
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"sync"
 	"time"
 
 	ctls "crypto/tls"
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 
 	"github.com/caddyserver/certmagic"
@@ -111,35 +108,6 @@ func parseTLS(c *caddy.Controller) error {
 
 			var names []string
 			names = append(names, manager.Zone)
-			//err = manager.ManageCert(ctx, names)
-			//if err != nil {
-			//log.Errorf("Error in ManageCert '%v'", err)
-			//}
-
-			// start using the obtained certificate
-			//keyFile := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.key"
-			//var certBytes []byte
-			//var keyBytes []byte
-
-			//counter := 0
-			//for {
-			//fmt.Println("Waiting for Certificate")
-			//if counter >= 5 {
-			//break
-			//}
-
-			// obtaining a certificate happens asynchronous
-			// if the certfile is present we are good to go
-			// if not we wait
-			//_, err = os.ReadFile(certPath)
-			//if err != nil {
-			//counter = counter + 1
-			//time.Sleep(1 * time.Second)
-			//continue
-			//}
-			//fmt.Println("Done waiting for certificate")
-			//break
-			//}
 
 			tlsconf, cert, err = manager.configureTLSwithACME(ctx)
 			config.TLSConfig = tlsconf
@@ -226,16 +194,16 @@ func parseTLS(c *caddy.Controller) error {
 }
 
 // encodePrivateKey encodes an ECDSA private key to PEM format.
-func encodePrivateKey(key *ecdsa.PrivateKey) ([]byte, error) {
-	derKey, err := x509.MarshalECPrivateKey(key)
-	if err != nil {
-		return nil, err
-	}
+//func encodePrivateKey(key *ecdsa.PrivateKey) ([]byte, error) {
+	//derKey, err := x509.MarshalECPrivateKey(key)
+	//if err != nil {
+		//return nil, err
+	//}
+//
+	//keyBlock := &pem.Block{
+		//Type:  "EC PRIVATE KEY",
+		//Bytes: derKey,
+	//}
 
-	keyBlock := &pem.Block{
-		Type:  "EC PRIVATE KEY",
-		Bytes: derKey,
-	}
-
-	return pem.EncodeToMemory(keyBlock), nil
-}
+	//return pem.EncodeToMemory(keyBlock), nil
+//}
