@@ -38,13 +38,10 @@ type (
 	LoopKey struct{}
 )
 
-
 func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
-	fmt.Println("Start of ACMEServer ServePacket")
 	as.m.Lock()
 	as.server = &dns.Server{PacketConn: p, Net: "udp", Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
 		acme_request := true
-		fmt.Println("ACMEServer Handling DNS Request")
 		state := request.Request{W: w, Req: r}
 		hdr := dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeTXT, Class: dns.ClassANY, Ttl: 0}
 		m := new(dns.Msg)
@@ -60,10 +57,8 @@ func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 		}
 
 		if acme_request {
-			fmt.Println("Received ACME Challenge")
 			m.Answer = append(m.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
 			w.WriteMsg(m)
-			fmt.Println("Done handling ACME Challenge")
 		} else {
 			fmt.Println("Ignoring DNS request:", state.Name())
 		}
@@ -71,14 +66,11 @@ func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 	as.m.Unlock()
 
 	as.readyChan <- "ready"
-	fmt.Println("End of ACMEServer ServePacket")
 	return as.server.ActivateAndServe()
 }
 
 func (as *ACMEServer) ShutDown() error {
-	fmt.Println("Start of ACMEServer Shutdown")
 	err := as.server.Shutdown()
-	fmt.Println("End of ACMEServer Shutdown")
 	return err
 }
 
@@ -88,7 +80,6 @@ func (as *ACMEServer) ShutDown() error {
 // for CoreDNS that means that we need to start the DNS Server,
 // serve exactly one request and
 func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error {
-	fmt.Println("Start of DNSSover Present !")
 
 	readyChan := make(chan string)
 	acmeServer := &ACMEServer{
@@ -118,23 +109,19 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 			fmt.Println("Received Error from ServePacket")
 			fmt.Println(err)
 		}
-		fmt.Println("ACME DNS Server has been shutdown!")
 	}()
-	fmt.Println("End of DNSSover Present !")
 	return nil
 }
 
 func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
-	fmt.Println("Start of DNSSolver Wait")
 	select {
 	case msg := <-d.DNS.readyChan:
 		fmt.Println("Received Message: ", msg)
 	case <-time.After(4 * time.Second):
 		// TODO: What do we do if this takes too long?
 		fmt.Println("Timeout")
-        return nil
+		return nil
 	}
-    fmt.Println("End of DNSSolver Wait")
 	return nil
 }
 
@@ -143,12 +130,10 @@ func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 // allocated/created during Present. It SHOULD NOT require
 // that Present ran successfully. It MUST return quickly.
 func (d *DNSSolver) CleanUp(ctx context.Context, challenge acme.Challenge) error {
-	fmt.Println("Start of DNSSolver CleanUp!")
 	err := d.DNS.ShutDown()
 	if err != nil {
 		fmt.Println("Error shutting down")
 		fmt.Println(err)
 	}
-	fmt.Println("End of DNSSolver CleanUp!")
 	return nil
 }

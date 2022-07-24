@@ -14,6 +14,7 @@ import (
 	"github.com/coredns/coredns/plugin"
 
 	//"github.com/coredns/coredns/plugin/pkg/log"
+	clog "github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/plugin/pkg/tls"
 )
 
@@ -35,6 +36,7 @@ func setup(c *caddy.Controller) error {
 }
 
 var (
+	log            = clog.NewWithPlugin("tls")
 	r              = renewCert{quit: make(chan bool), renew: make(chan bool)}
 	once, shutOnce sync.Once
 )
@@ -46,7 +48,6 @@ const (
 )
 
 func parseTLS(c *caddy.Controller) error {
-	fmt.Println("Start of parseTLS")
 	config := dnsserver.GetConfig(c)
 
 	var tlsconf *ctls.Config
@@ -66,7 +67,6 @@ func parseTLS(c *caddy.Controller) error {
 			// start of the acme flow,
 
 			//check if cert is present and valid
-
 			ctx := context.Background()
 
 			var domainNameACME string
@@ -74,25 +74,21 @@ func parseTLS(c *caddy.Controller) error {
 			//certPath := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
 
 			for c.NextBlock() {
-				fmt.Println("ACME Config Block Found")
 				token := c.Val()
 				switch token {
 				case argDomain:
-					fmt.Println("Found Keyword Domain")
 					domainArgs := c.RemainingArgs()
 					if len(domainArgs) > 1 {
 						return plugin.Error("tls", c.Errf("To many arguments to domain"))
 					}
 					domainNameACME = domainArgs[0]
 				case argCa:
-					fmt.Println("Found Keyword CA")
 					caArgs := c.RemainingArgs()
 					if len(caArgs) > 1 {
 						return plugin.Error("tls", c.Errf("To many arguments to ca"))
 					}
 					ca = caArgs[0]
 				case argCertPath:
-					fmt.Println("Found Keyword CertPath")
 					certPathArgs := c.RemainingArgs()
 					if len(certPathArgs) > 1 {
 						return plugin.Error("tls", c.Errf("To many arguments to CertPath"))
@@ -102,7 +98,6 @@ func parseTLS(c *caddy.Controller) error {
 					return c.Errf("unknown argument to acme '%s'", token)
 				}
 			}
-			fmt.Println("Starting ACME")
 
 			manager := NewACMEManager(config, domainNameACME, ca)
 
@@ -122,36 +117,31 @@ func parseTLS(c *caddy.Controller) error {
 
 			// start a loop that checks for renewals
 			//r.renew <- false
-			go func() {
-				fmt.Println("Starting renewal checker loop")
-				for {
-					time.Sleep(40 * time.Second)
-					fmt.Println("checking renewal")
-					if cert.NeedsRenewal(manager.Config) {
-						fmt.Println("initialize renewal")
-						r.renew <- true
-						break
-					} else {
-						fmt.Println("no renewal needed")
-					}
-				}
-			}()
 
 			// this part is taken from to the reload plugin
 			// basically we need to restart/reload CoreDNS whenever
 			// a certificate has been renewed
-			fmt.Println("Registering Hook")
 			once.Do(func() {
+				go func() {
+					log.Info("Starting renewal checker loop")
+					for {
+						time.Sleep(40 * time.Second)
+						if cert.NeedsRenewal(manager.Config) {
+							log.Info("Certificate expiring soon, initializing reload")
+							r.renew <- true
+						}
+					}
+				}()
 				caddy.RegisterEventHook("updateCert", hook)
 			})
 			shutOnce.Do(func() {
 				c.OnFinalShutdown(func() error {
+					log.Info("Quiting renewal checker")
 					r.quit <- true
 					return nil
 				})
 			})
 
-			fmt.Println("End of ACME config parsing")
 		} else {
 			//No ACME part - plugin continues to work like the normal tls plugin
 			fmt.Println("Uing manually conigured certificate")
@@ -190,20 +180,21 @@ func parseTLS(c *caddy.Controller) error {
 			configureTLS(config, tlsconf, clientAuth)
 		}
 	}
+	fmt.Println("End of tls plugin config parsing")
 	return nil
 }
 
 // encodePrivateKey encodes an ECDSA private key to PEM format.
 //func encodePrivateKey(key *ecdsa.PrivateKey) ([]byte, error) {
-	//derKey, err := x509.MarshalECPrivateKey(key)
-	//if err != nil {
-		//return nil, err
-	//}
+//derKey, err := x509.MarshalECPrivateKey(key)
+//if err != nil {
+//return nil, err
+//}
 //
-	//keyBlock := &pem.Block{
-		//Type:  "EC PRIVATE KEY",
-		//Bytes: derKey,
-	//}
+//keyBlock := &pem.Block{
+//Type:  "EC PRIVATE KEY",
+//Bytes: derKey,
+//}
 
-	//return pem.EncodeToMemory(keyBlock), nil
+//return pem.EncodeToMemory(keyBlock), nil
 //}

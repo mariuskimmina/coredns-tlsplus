@@ -25,8 +25,6 @@ type ACMEManager struct {
 
 // NewACMEManager create a new ACMEManager
 func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManager {
-	fmt.Println("Start of NewACMEManager")
-
 	if ca == "" {
 		ca = "localhost:14001/dir" //pebble default
 	}
@@ -93,7 +91,6 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManag
 	acmeConfig.Issuers = append(acmeConfig.Issuers, acmeIssuer)
 	certmagic.RateLimitEvents = 100
 
-	fmt.Println("End of NewACMEManager")
 	return &ACMEManager{
 		Config: acmeConfig,
 		Issuer: acmeIssuer,
@@ -102,7 +99,6 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManag
 }
 
 func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *certmagic.Certificate, error) {
-	fmt.Println("Start of configureTLSwithACME")
 
 	var cert certmagic.Certificate
 	var err error
@@ -110,7 +106,6 @@ func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *
 	// try loading existing certificate
 	cert, err = am.Config.CacheManagedCertificate(ctx, am.Zone)
 	if err != nil {
-		fmt.Println("obtaining a cert")
 		if !errors.Is(err, fs.ErrNotExist) {
 			fmt.Println(err)
 			return nil, nil, err
@@ -128,10 +123,8 @@ func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *
 		}
 	}
 
-	fmt.Println("Loaded a certificate, lets see if it needs renewal")
 	// check if renewal is required
 	if cert.NeedsRenewal(am.Config) {
-		fmt.Println("renewing a cert")
 		var err error
 		err = am.RenewCert(ctx, am.Zone)
 		if err != nil {
@@ -148,8 +141,6 @@ func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *
 
 	if cert.NeedsRenewal(am.Config) {
 		fmt.Println("RENEWAL failed!!!")
-	} else {
-		fmt.Println("Certificate is ready")
 	}
 
 	//tlsConfig := acmeManager.Config.TLSConfig()
@@ -157,7 +148,6 @@ func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *
 	tlsConfig.ClientAuth = tls.NoClientCert
 	tlsConfig.ClientCAs = tlsConfig.RootCAs
 
-	fmt.Println("End of configureTLSwithACME")
 	return tlsConfig, &cert, nil
 }
 
@@ -171,9 +161,7 @@ func (a *ACMEManager) GetCert(zone string) error {
 // information - I need to use the slightly lower level functions of Obtain and Renew append
 // create the logic that decides when to do these things myself.
 func (a *ACMEManager) ManageCert(ctx context.Context, zone []string) error {
-	fmt.Println("Start of ManageCert")
 	err := a.Config.ManageAsync(ctx, zone)
-	fmt.Println("End of ManageCert")
 	return err
 }
 
