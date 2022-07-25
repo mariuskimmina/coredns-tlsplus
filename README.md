@@ -17,7 +17,8 @@ DNS-over-TLS, DNS-over-HTTPS or DNS-over-gRPC.
 
 ## Demo
 
-![Demo](images/tlsplus.mp4)
+
+https://user-images.githubusercontent.com/38843153/180743974-12b04cbc-ae35-459c-9a30-de59e5179de3.mov
 
 ## Usage
 
