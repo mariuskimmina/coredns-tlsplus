@@ -14,12 +14,6 @@ type ACMEHandler struct {
 	Next plugin.Handler
 }
 
-const (
-	dnsChallengeString   = "_acme-challenge."
-	certificateAuthority = "letsencrypt.org"
-	pluginName           = "tlsplus"
-)
-
 func (h *ACMEHandler) Name() string { return pluginName }
 
 func (h *ACMEHandler) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
@@ -43,9 +37,6 @@ func (h *ACMEHandler) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 	return h.Next.ServeDNS(ctx, w, r)
 }
 
-func checkDNSChallenge(zone string) bool {
-	return strings.HasPrefix(zone, dnsChallengeString)
-}
 
 func (h *ACMEHandler) solveDNSChallenge(ctx context.Context, zone string, class uint16, a *dns.Msg) error {
 	return nil

@@ -9,6 +9,18 @@ import (
 	"github.com/miekg/dns"
 )
 
+func TestCheckDNSChallenge() {
+	_ = []struct {
+		name     string
+		question string
+	}{
+		{
+			name:     "ACME Challenge",
+			question: "_acme-challenge.example.com.",
+		},
+	}
+}
+
 func setupACME(readyChan chan string) {
 	acmeServer := &ACMEServer{
 		readyChan: readyChan,

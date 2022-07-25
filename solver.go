@@ -51,17 +51,26 @@ func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 			acme_request = false
 		}
 
-		if !(strings.HasPrefix(state.Name(), "_acme-challenge")) {
+            
+		if !checkDNSChallenge(state.Name()) {
 			fmt.Println("Received Something else, ignoring")
 			acme_request = false
-		}
+        }
 
-		if acme_request {
-			m.Answer = append(m.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
-			w.WriteMsg(m)
-		} else {
+		//if !(strings.HasPrefix(state.Name(), "_acme-challenge")) {
+			//fmt.Println("Received Something else, ignoring")
+			//acme_request = false
+		//}
+
+		if !acme_request {
 			fmt.Println("Ignoring DNS request:", state.Name())
-		}
+            return
+		} 
+
+        fmt.Println("Answering DNS request:", state.Name())
+        m.Answer = append(m.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
+        w.WriteMsg(m)
+        return
 	})}
 	as.m.Unlock()
 
@@ -72,6 +81,15 @@ func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 func (as *ACMEServer) ShutDown() error {
 	err := as.server.Shutdown()
 	return err
+}
+
+const (
+	dnsChallengeString   = "_acme-challenge."
+	pluginName           = "tlsplus"
+)
+
+func checkDNSChallenge(zone string) bool {
+	return strings.HasPrefix(zone, dnsChallengeString)
 }
 
 // Present is called just before a challenge is initiated.
