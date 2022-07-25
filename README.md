@@ -20,8 +20,7 @@ DNS-over-TLS, DNS-over-HTTPS or DNS-over-gRPC.
 The follwing show's a CoreDNS Server starting with the tlsplus plugin, obtaining a cerificate and serving DNS over TLS. 
 To show the certificate renewal progress and I setup a local CA with [Pebble][Pebble] and issued a certificate that's only valid for 1 Minute.
 
-
-https://user-images.githubusercontent.com/38843153/180743974-12b04cbc-ae35-459c-9a30-de59e5179de3.mov
+https://user-images.githubusercontent.com/38843153/180786839-adcba9db-b883-4399-a4e4-a6e924b51df3.mov
 
 ## Usage
 
