@@ -22,16 +22,9 @@ func init() { plugin.Register("tls", setup) }
 
 func setup(c *caddy.Controller) error {
 	err := parseTLS(c)
-	config := dnsserver.GetConfig(c)
 	if err != nil {
 		return plugin.Error("tls", err)
 	}
-	acmeHandler := &ACMEHandler{}
-
-	config.AddPlugin(func(next plugin.Handler) plugin.Handler {
-		acmeHandler.Next = next
-		return acmeHandler
-	})
 	return nil
 }
 
@@ -180,21 +173,5 @@ func parseTLS(c *caddy.Controller) error {
 			configureTLS(config, tlsconf, clientAuth)
 		}
 	}
-	fmt.Println("End of tls plugin config parsing")
 	return nil
 }
-
-// encodePrivateKey encodes an ECDSA private key to PEM format.
-//func encodePrivateKey(key *ecdsa.PrivateKey) ([]byte, error) {
-//derKey, err := x509.MarshalECPrivateKey(key)
-//if err != nil {
-//return nil, err
-//}
-//
-//keyBlock := &pem.Block{
-//Type:  "EC PRIVATE KEY",
-//Bytes: derKey,
-//}
-
-//return pem.EncodeToMemory(keyBlock), nil
-//}

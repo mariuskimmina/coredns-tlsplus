@@ -15,6 +15,10 @@ or are using gRPC (https://grpc.io/, not an IETF standard). Normally DNS traffic
 The *tlsplus* plugin allows you to either have CoreDNS generate and manage certificates for itself or configure the cryptographic keys yourself that are needed for all three
 DNS-over-TLS, DNS-over-HTTPS or DNS-over-gRPC.
 
+## Demo
+
+![Demo](images/tlsplus.webm.mov)
+
 ## Usage
 
 ### Automatic

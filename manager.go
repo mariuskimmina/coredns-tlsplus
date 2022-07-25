@@ -135,12 +135,11 @@ func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *
 		if err != nil {
 			return nil, nil, fmt.Errorf("%s: reloading renewed certificate into memory: %v", am.Zone, err)
 		}
-	} else {
-		fmt.Println("No Renewal needed, keep going")
-	}
+	} 
 
+    // check again, if it still needs renewal something went wrong
 	if cert.NeedsRenewal(am.Config) {
-		fmt.Println("RENEWAL failed!!!")
+        log.Error("Failed to renew certificate")
 	}
 
 	//tlsConfig := acmeManager.Config.TLSConfig()
@@ -153,15 +152,6 @@ func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *
 
 func (a *ACMEManager) GetCert(zone string) error {
 	err := a.Config.ObtainCertSync(context.Background(), zone)
-	return err
-}
-
-// TODO: I don't think I can use the "Manage" Functions if I only want to restart
-// when a Certificate is being renewed, because the manage functions does not provide this
-// information - I need to use the slightly lower level functions of Obtain and Renew append
-// create the logic that decides when to do these things myself.
-func (a *ACMEManager) ManageCert(ctx context.Context, zone []string) error {
-	err := a.Config.ManageAsync(ctx, zone)
 	return err
 }
 

@@ -25,19 +25,6 @@ type ACMEServer struct {
 	readyChan chan string
 }
 
-const (
-	tcp = 0
-	udp = 1
-)
-
-type (
-	// Key is the context key for the current server added to the context.
-	Key struct{}
-
-	// LoopKey is the context key to detect server wide loops.
-	LoopKey struct{}
-)
-
 func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 	as.m.Lock()
 	as.server = &dns.Server{PacketConn: p, Net: "udp", Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
@@ -50,24 +37,18 @@ func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 			fmt.Println("Received Wrong DNS Request")
 			acme_request = false
 		}
-
             
 		if !checkDNSChallenge(state.Name()) {
 			fmt.Println("Received Something else, ignoring")
 			acme_request = false
         }
 
-		//if !(strings.HasPrefix(state.Name(), "_acme-challenge")) {
-			//fmt.Println("Received Something else, ignoring")
-			//acme_request = false
-		//}
-
 		if !acme_request {
 			fmt.Println("Ignoring DNS request:", state.Name())
             return
 		} 
 
-        fmt.Println("Answering DNS request:", state.Name())
+        log.Debug("Answering DNS request:", state.Name())
         m.Answer = append(m.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
         w.WriteMsg(m)
         return
@@ -133,11 +114,11 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 
 func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 	select {
-	case msg := <-d.DNS.readyChan:
-		fmt.Println("Received Message: ", msg)
+	case <-d.DNS.readyChan:
+        return nil
 	case <-time.After(4 * time.Second):
 		// TODO: What do we do if this takes too long?
-		fmt.Println("Timeout")
+        log.Error("Failed to obtain certificate, DNS-Server took to long to start")
 		return nil
 	}
 	return nil
