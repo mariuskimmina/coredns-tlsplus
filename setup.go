@@ -105,8 +105,8 @@ func parseTLS(c *caddy.Controller) error {
 			// there is nothing left for the solver to do, but we still need to
 			// set it. If we don't set it the other solver would stil try to start
 			// a dns.Server.
-			solverCoreDNS := &CoreDNSSolver{}
-			manager.Issuer.DNS01Solver = solverCoreDNS
+			//solverCoreDNS := &CoreDNSSolver{}
+			//manager.Issuer.DNS01Solver = solverCoreDNS
 
 			// start a loop that checks for renewals
 			//r.renew <- false
