@@ -26,29 +26,38 @@ type ACMEServer struct {
 }
 
 func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
+    log.Info("ACME DNS-Server starts")
 	as.m.Lock()
 	as.server = &dns.Server{PacketConn: p, Net: "udp", Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
 		acme_request := true
 		state := request.Request{W: w, Req: r}
+
+        log.Infof("Received DNS request | name: %s, type: %s, source ip: %s \n", state.Name(), state.Type(), state.IP())
 		hdr := dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeTXT, Class: dns.ClassANY, Ttl: 0}
 		m := new(dns.Msg)
 		m.SetReply(r)
+
+		if state.QType() == dns.TypeCAA {
+			log.Info("Answering CAA request:", state.Name())
+            m.Answer = append(m.Answer, &dns.CAA{Hdr: hdr, Value: "letsencrypt.org" })
+            w.WriteMsg(m)
+            return
+		}
+
 		if state.QType() != dns.TypeTXT {
-			fmt.Println("Received Wrong DNS Request")
 			acme_request = false
 		}
-            
+
 		if !checkDNSChallenge(state.Name()) {
-			fmt.Println("Received Something else, ignoring")
 			acme_request = false
         }
 
 		if !acme_request {
-			fmt.Println("Ignoring DNS request:", state.Name())
+            log.Infof("Ignoring DNS request name: %s\n", state.Name())
             return
 		} 
 
-        log.Debug("Answering DNS request:", state.Name())
+        log.Info("Answering DNS request:", state.Name())
         m.Answer = append(m.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
         w.WriteMsg(m)
         return
@@ -79,7 +88,7 @@ func checkDNSChallenge(zone string) bool {
 // for CoreDNS that means that we need to start the DNS Server,
 // serve exactly one request and
 func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error {
-
+    log.Info("Start of DNS Solver Present")
 	readyChan := make(chan string)
 	acmeServer := &ACMEServer{
 		readyChan: readyChan,
@@ -97,16 +106,10 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 		fmt.Println(err)
 	}
 
-	if err != nil {
-		fmt.Println("Failed to create Listener")
-		fmt.Println(err)
-	}
-
 	go func() {
 		err := d.DNS.Start(l, challenge)
 		if err != nil {
-			fmt.Println("Received Error from ServePacket")
-			fmt.Println(err)
+			log.Debug("Received Error from ServePacket")
 		}
 	}()
 	return nil
@@ -115,6 +118,7 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 	select {
 	case <-d.DNS.readyChan:
+        log.Info("ACME Server is ready")
         return nil
 	case <-time.After(4 * time.Second):
 		// TODO: What do we do if this takes too long?

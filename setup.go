@@ -57,6 +57,7 @@ func parseTLS(c *caddy.Controller) error {
 		args := c.RemainingArgs()
 
 		if args[0] == "acme" {
+            log.Info("Starting ACME Setup")
 			// start of the acme flow,
 
 			//check if cert is present and valid
@@ -100,23 +101,10 @@ func parseTLS(c *caddy.Controller) error {
 			tlsconf, cert, err = manager.configureTLSwithACME(ctx)
 			config.TLSConfig = tlsconf
 
-			// a CoreDNSSolver doesn't actually do anything because CoreDNS is
-			// already up and running and has a handler to solve the ACME Challenge,
-			// there is nothing left for the solver to do, but we still need to
-			// set it. If we don't set it the other solver would stil try to start
-			// a dns.Server.
-			//solverCoreDNS := &CoreDNSSolver{}
-			//manager.Issuer.DNS01Solver = solverCoreDNS
-
-			// start a loop that checks for renewals
-			//r.renew <- false
-
-			// this part is taken from to the reload plugin
-			// basically we need to restart/reload CoreDNS whenever
-			// a certificate has been renewed
 			once.Do(func() {
+                // start a loop that checks for renewals
 				go func() {
-					log.Info("Starting renewal checker loop")
+					log.Debug("Starting certificate renewal loop in the background")
 					for {
 						time.Sleep(40 * time.Second)
 						if cert.NeedsRenewal(manager.Config) {
@@ -134,7 +122,6 @@ func parseTLS(c *caddy.Controller) error {
 					return nil
 				})
 			})
-
 		} else {
 			//No ACME part - plugin continues to work like the normal tls plugin
 			fmt.Println("Uing manually conigured certificate")
