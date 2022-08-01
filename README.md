@@ -53,6 +53,38 @@ go test ./...
 Port 14000 (ACME Server) and 1053 (CoreDNS) are required for integration tests
 
 
+## History
+
+The original issue where the ideas for this plugin were first discussed can be found here: https://github.com/coredns/coredns/issues/3460  
+The author has a Corefile like this:
+
+```
+https://www.mydomain.com {
+    bind myip
+    hosts {
+        10.6.6.2 sms.service
+        10.6.6.3 search.service
+    }
+}
+```
+
+asking how he could setup automatic tls certificates. At the time that couldn't be done, but now with this plugin, it can.
+Assuming that he has setup his CoreDNS server as the authoritative DNS Server for `mydomain` running at ns1.mydomain.com.
+The following Corefile should automatically obtain a certificate from let's encrypt and keep it renewed at all times.
+
+```
+https://mydomain.com {
+    tls acme {
+        domain ns1.mydomain.com
+    }
+    bind myip
+    hosts {
+        10.6.6.2 sms.mydomain.com
+        10.6.6.3 search.mydomain.com
+    }
+}
+```
+
 ## How ACME works
 
 The [ACME protocol][ACME] was invented by [Let's Encrypt][Let's Encrypt] with the objective of making it possible to

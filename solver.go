@@ -96,7 +96,7 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 	d.DNS = acmeServer
 
 	addr := net.UDPAddr{
-		Port: d.Port,
+		Port: 53,
 		IP:   net.ParseIP("0.0.0.0"),
 	}
 
