@@ -57,7 +57,7 @@ func parseTLS(c *caddy.Controller) error {
 		args := c.RemainingArgs()
 
 		if args[0] == "acme" {
-            log.Info("Starting ACME Setup")
+			log.Info("Starting ACME Setup")
 			// start of the acme flow,
 
 			//check if cert is present and valid
@@ -102,7 +102,7 @@ func parseTLS(c *caddy.Controller) error {
 			config.TLSConfig = tlsconf
 
 			once.Do(func() {
-                // start a loop that checks for renewals
+				// start a loop that checks for renewals
 				go func() {
 					log.Debug("Starting certificate renewal loop in the background")
 					for {

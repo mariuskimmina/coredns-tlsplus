@@ -26,22 +26,22 @@ type ACMEServer struct {
 }
 
 func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
-    log.Info("ACME DNS-Server starts")
+	log.Info("ACME DNS-Server starts")
 	as.m.Lock()
 	as.server = &dns.Server{PacketConn: p, Net: "udp", Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
 		acme_request := true
 		state := request.Request{W: w, Req: r}
 
-        log.Infof("Received DNS request | name: %s, type: %s, source ip: %s \n", state.Name(), state.Type(), state.IP())
+		log.Infof("Received DNS request | name: %s, type: %s, source ip: %s \n", state.Name(), state.Type(), state.IP())
 		hdr := dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeTXT, Class: dns.ClassANY, Ttl: 0}
 		m := new(dns.Msg)
 		m.SetReply(r)
 
 		if state.QType() == dns.TypeCAA {
 			log.Info("Answering CAA request:", state.Name())
-            m.Answer = append(m.Answer, &dns.CAA{Hdr: hdr, Value: "letsencrypt.org" })
-            w.WriteMsg(m)
-            return
+			m.Answer = append(m.Answer, &dns.CAA{Hdr: hdr, Value: "letsencrypt.org"})
+			w.WriteMsg(m)
+			return
 		}
 
 		if state.QType() != dns.TypeTXT {
@@ -50,17 +50,17 @@ func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 
 		if !checkDNSChallenge(state.Name()) {
 			acme_request = false
-        }
+		}
 
 		if !acme_request {
-            log.Infof("Ignoring DNS request name: %s\n", state.Name())
-            return
-		} 
+			log.Infof("Ignoring DNS request name: %s\n", state.Name())
+			return
+		}
 
-        log.Info("Answering DNS request:", state.Name())
-        m.Answer = append(m.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
-        w.WriteMsg(m)
-        return
+		log.Info("Answering DNS request:", state.Name())
+		m.Answer = append(m.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
+		w.WriteMsg(m)
+		return
 	})}
 	as.m.Unlock()
 
@@ -74,8 +74,8 @@ func (as *ACMEServer) ShutDown() error {
 }
 
 const (
-	dnsChallengeString   = "_acme-challenge."
-	pluginName           = "tlsplus"
+	dnsChallengeString = "_acme-challenge."
+	pluginName         = "tlsplus"
 )
 
 func checkDNSChallenge(zone string) bool {
@@ -88,7 +88,7 @@ func checkDNSChallenge(zone string) bool {
 // for CoreDNS that means that we need to start the DNS Server,
 // serve exactly one request and
 func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error {
-    log.Info("Start of DNS Solver Present")
+	log.Info("Start of DNS Solver Present")
 	readyChan := make(chan string)
 	acmeServer := &ACMEServer{
 		readyChan: readyChan,
@@ -118,11 +118,11 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 	select {
 	case <-d.DNS.readyChan:
-        log.Info("ACME Server is ready")
-        return nil
+		log.Info("ACME Server is ready")
+		return nil
 	case <-time.After(4 * time.Second):
 		// TODO: What do we do if this takes too long?
-        log.Error("Failed to obtain certificate, DNS-Server took to long to start")
+		log.Error("Failed to obtain certificate, DNS-Server took to long to start")
 		return nil
 	}
 	return nil

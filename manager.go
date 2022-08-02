@@ -34,17 +34,17 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManag
 	// figure out how to only do this in test cases
 	//certbytes, err := os.ReadFile("test/certs/pebble.minica.pem")
 	//if err != nil {
-		//fmt.Println(err.Error())
-		//panic("Failed to load Cert")
+	//fmt.Println(err.Error())
+	//panic("Failed to load Cert")
 	//}
 	//pemcert, _ := pem.Decode(certbytes)
 	//if pemcert == nil {
-		//fmt.Println("pemcert not found")
+	//fmt.Println("pemcert not found")
 	//}
 	//cert, err := x509.ParseCertificate(pemcert.Bytes)
 	//if err != nil {
-		//fmt.Println(err)
-		//panic("Failed to parse Cert")
+	//fmt.Println(err)
+	//panic("Failed to parse Cert")
 	//}
 	pool, err := x509.SystemCertPool()
 	if err != nil {
@@ -105,7 +105,7 @@ func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *
 	// try loading existing certificate
 	cert, err = am.Config.CacheManagedCertificate(ctx, am.Zone)
 	if err != nil {
-        log.Info("Obtaining TLS Certificate")
+		log.Info("Obtaining TLS Certificate")
 		if !errors.Is(err, fs.ErrNotExist) {
 			fmt.Println(err)
 			return nil, nil, err
@@ -125,7 +125,7 @@ func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *
 
 	// check if renewal is required
 	if cert.NeedsRenewal(am.Config) {
-        log.Info("Renewing TLS Certificate")
+		log.Info("Renewing TLS Certificate")
 		var err error
 		err = am.RenewCert(ctx, am.Zone)
 		if err != nil {
@@ -136,11 +136,11 @@ func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *
 		if err != nil {
 			return nil, nil, fmt.Errorf("%s: reloading renewed certificate into memory: %v", am.Zone, err)
 		}
-	} 
+	}
 
-    // check again, if it still needs renewal something went wrong
+	// check again, if it still needs renewal something went wrong
 	if cert.NeedsRenewal(am.Config) {
-        log.Error("Failed to renew certificate")
+		log.Error("Failed to renew certificate")
 	}
 
 	//tlsConfig := acmeManager.Config.TLSConfig()
