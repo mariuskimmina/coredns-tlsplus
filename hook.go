@@ -1,8 +1,6 @@
 package tls
 
 import (
-	"fmt"
-
 	"github.com/coredns/caddy"
 )
 
@@ -30,11 +28,11 @@ func hook(event caddy.EventName, info interface{}) error {
 				}
 				_, err = instance.Restart(corefile)
 				if err != nil {
-					fmt.Printf("Error during Restart: %v, \n", err)
+					log.Errorf("Error during Restart: %v, \n", err)
 				}
 				return
 			case <-r.quit:
-				log.Info("Certificate renewal quit")
+				log.Debug("Received quit signal, stopping certificate renewal")
 				return
 			}
 		}

@@ -2,6 +2,7 @@ package tls
 
 import (
 	"context"
+	"strconv"
 	"sync"
 	"time"
 
@@ -37,7 +38,9 @@ var (
 const (
 	argDomain   = "domain"
 	argCa       = "ca"
+	argCaCert   = "cacert"
 	argCertPath = "certpath"
+	argPort     = "port"
 )
 
 func parseTLS(c *caddy.Controller) error {
@@ -65,6 +68,8 @@ func parseTLS(c *caddy.Controller) error {
 
 			var domainNameACME string
 			var ca string
+			var caCert string
+            var port string
 			//certPath := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
 
 			for c.NextBlock() {
@@ -82,6 +87,18 @@ func parseTLS(c *caddy.Controller) error {
 						return plugin.Error("tls", c.Errf("To many arguments to ca"))
 					}
 					ca = caArgs[0]
+				case argCaCert:
+					caCertArgs := c.RemainingArgs()
+					if len(caCertArgs) > 1 {
+						return plugin.Error("tls", c.Errf("To many arguments to cacert"))
+					}
+					caCert = caCertArgs[0]
+				case argPort:
+					portArgs := c.RemainingArgs()
+					if len(portArgs) > 1 {
+						return plugin.Error("tls", c.Errf("To many arguments to port"))
+					}
+					port = portArgs[0]
 				case argCertPath:
 					certPathArgs := c.RemainingArgs()
 					if len(certPathArgs) > 1 {
@@ -93,7 +110,15 @@ func parseTLS(c *caddy.Controller) error {
 				}
 			}
 
-			manager := NewACMEManager(config, domainNameACME, ca)
+            portNumber := 53
+            if port != "" {
+                portNumber, err = strconv.Atoi(port)
+                if err != nil {
+                    log.Errorf("Failed to convert port argument to integer: %v \n", err)
+                }
+            }
+
+			manager := NewACMEManager(config, domainNameACME, ca, caCert, portNumber)
 
 			var names []string
 			names = append(names, manager.Zone)

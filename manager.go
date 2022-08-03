@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"io/fs"
-	"strconv"
 	"time"
 
 	"crypto/tls"
 	"crypto/x509"
-	//"encoding/pem"
+	"encoding/pem"
 	"fmt"
-	//"os"
+	"os"
 
 	"github.com/caddyserver/certmagic"
 	"github.com/coredns/coredns/core/dnsserver"
@@ -24,46 +23,36 @@ type ACMEManager struct {
 }
 
 // NewACMEManager create a new ACMEManager
-func NewACMEManager(config *dnsserver.Config, zone string, ca string) *ACMEManager {
+func NewACMEManager(config *dnsserver.Config, zone string, ca string, caCert string, port int) *ACMEManager {
+    //TODO: change this
 	if ca == "" {
 		ca = "localhost:14001/dir" //pebble default
 	}
 
-	// TODO: this lets our  acme client trust the pebble cert
-	// this is only needed for testing and should not be in production
-	// figure out how to only do this in test cases
-	//certbytes, err := os.ReadFile("test/certs/pebble.minica.pem")
-	//if err != nil {
-	//fmt.Println(err.Error())
-	//panic("Failed to load Cert")
-	//}
-	//pemcert, _ := pem.Decode(certbytes)
-	//if pemcert == nil {
-	//fmt.Println("pemcert not found")
-	//}
-	//cert, err := x509.ParseCertificate(pemcert.Bytes)
-	//if err != nil {
-	//fmt.Println(err)
-	//panic("Failed to parse Cert")
-	//}
 	pool, err := x509.SystemCertPool()
 	if err != nil {
-		fmt.Println(err)
-		panic("Failed to get system Certpool")
-	}
-	//pool.AddCert(cert)
-
-	portNumber, err := strconv.Atoi(config.Port)
-	if err != nil {
-		fmt.Println(err)
-		panic("Failed to convert config.Port to integer")
+        log.Errorf("Failed to get system pool of trusted certificates: %v \n", err)
 	}
 
-	//TODO: the address cannot be hardcoded
+    if caCert != "" {
+        certbytes, err := os.ReadFile(caCert)
+        if err != nil {
+            log.Errorf("Failed to read certificate provided by cacert option: %v \n", err)
+        }
+        pemcert, _ := pem.Decode(certbytes)
+        if pemcert == nil {
+            fmt.Println("pemcert not found")
+        }
+        cert, err := x509.ParseCertificate(pemcert.Bytes)
+        if err != nil {
+            log.Errorf("Failed to parse certificate provided by cacert option: %v \n", err)
+        }
+        pool.AddCert(cert)
+    }
+
 	solver := &DNSSolver{
-		Port: portNumber,
-		Addr: "127.0.0.1:1053",
-	}
+        Port: port,
+    }
 
 	certmagic.DefaultACME.Email = "test@test.com"
 

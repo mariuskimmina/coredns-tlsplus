@@ -174,6 +174,8 @@ func TestRenewal(t *testing.T) {
                 tls acme {
                     domain example.com
                     ca     localhost:14001/dir
+                    cacert test/certs/pebble.minica.pem
+                    port   1053
                 }
                 whoami  
             }`,
@@ -219,19 +221,19 @@ func TestRenewal(t *testing.T) {
 			// wait for certificate to expire
 			time.Sleep(80 * time.Second)
 
-			_, _, err = client.Exchange(m, tcp)
+            r, _, err := client.Exchange(m, tcp)
 
 			if err != nil {
 				if err.Error() == "x509: cannot validate certificate for :: because it doesn't contain any IP SANs" {
-					fmt.Println("This errror is expected")
+					fmt.Println("Ignoring certificate error")
 				} else {
 					fmt.Println(err)
 				}
 			}
 
-			//if n := len(r.Answer); n != tc.AnswerLength {
-			//t.Errorf("Expected %v answers, got %v", tc.AnswerLength, n)
-			//}
+			if n := len(r.Answer); n != tc.AnswerLength {
+                t.Errorf("Expected %v answers, got %v", tc.AnswerLength, n)
+			}
 
 			//if tc.AnswerLength > 0 {
 			//if r.Answer[0].(*dns.A).A.String() != tc.ExpectedIP {
@@ -243,6 +245,5 @@ func TestRenewal(t *testing.T) {
 			//t.Errorf("Expected 2 RRs in additional section, but got %d", n)
 			//}
 			//}
-		})
-	}
+		}) }
 }

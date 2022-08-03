@@ -2,6 +2,7 @@ tls://.:1053 {
     tls acme {
         domain example.com
         ca localhost:14001/dir
+        cacert test/certs/pebble.minica.pem
     }
     whoami
 }
