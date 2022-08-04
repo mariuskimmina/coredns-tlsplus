@@ -54,12 +54,46 @@ To use this plugin for automatic certificate management you have to fullfill the
 When CoreDNS is setup as the authoritative DNS Server for a domain such as `example.com`, all you need to add to your corefile to start serving DoT or DoH is the following:
 
 ~~~ txt
-tlsplus acme {
+tls acme {
     domain example.com
 }
 ~~~
 
+full example configuration, serving dns over both UPD (Port 53) and HTTPS (Port 443) and TLS (Port 853). 
+In this example the dns server, will obtain a certificate for `ns1.mydomain.com`.
+
+```
+tls://mydomain.com {
+    tls acme {
+        domain ns1.mydomain.com
+    }
+    hosts {
+        10.6.6.2 mydomain.com
+        10.6.6.3 ns1.mydomain.com
+    }
+}
+
+https://mydomain.com {
+    tls acme {
+        domain ns1.mydomain.com
+    }
+    hosts {
+        10.6.6.2 mydomain.com
+        10.6.6.3 ns1.mydomain.com
+    }
+}
+
+mydomain.com {
+    hosts {
+        10.6.6.2 mydomain.com
+        10.6.6.3 ns1.mydomain.com
+    }
+}
+```
+
+
 ### Manual
+You can provide a certificate and key manually. If this is your use-case you don't need this plugin, use the internal tls plugin of coredns
 
 ~~~ txt
 tls CERT KEY [CA]
