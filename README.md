@@ -50,6 +50,7 @@ go build
 To use this plugin for automatic certificate management you have to fullfill the following requirements:
 * Own a domain
 * Setup CoreDNS as the authoritative DNS server for that domain
+* Port 53 - While CoreDNS may serve DNS over TLS on any port, during startup the plugin will use port 53 to solve the [ACME Challenge][Challenge]
 
 When CoreDNS is setup as the authoritative DNS Server for a domain such as `example.com`, all you need to add to your corefile to start serving DoT or DoH is the following:
 
@@ -153,3 +154,4 @@ ACME Challenges: https://letsencrypt.org/docs/challenge-types/
 [Let's Encrypt]: https://letsencrypt.org/
 [client-server]: https://en.wikipedia.org/wiki/Client%E2%80%93server_model
 [Pebble]: https://github.com/letsencrypt/pebble
+[Challenge]: https://letsencrypt.org/docs/challenge-types/  
