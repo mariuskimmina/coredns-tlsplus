@@ -110,6 +110,8 @@ func parseTLS(c *caddy.Controller) error {
 				}
 			}
 
+            // the ACME DNS-01 Challenge doesn't work with other ports than 53
+            // this option is really only there to use in tests with Pebble
             portNumber := 53
             if port != "" {
                 portNumber, err = strconv.Atoi(port)

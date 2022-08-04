@@ -56,6 +56,8 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string, caCert str
 
 	certmagic.DefaultACME.Email = "test@test.com"
 
+    adfjlskfj 
+
 	acmeIssuerTemplate := certmagic.ACMEIssuer{
 		Agreed:                  true,
 		DisableHTTPChallenge:    true,

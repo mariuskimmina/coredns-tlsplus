@@ -24,7 +24,35 @@ https://user-images.githubusercontent.com/38843153/180786839-adcba9db-b883-4399-
 
 ## Usage
 
+First you need to compile CoreDNS with this plugin
+
+```
+# Clone CoreDNS
+git clone https://github.com/coredns/coredns
+cd coredns
+
+# Add this plugin to the plugin.cfg
+sed 's/tls:tls/tls:github.com\/mariuskimina\/coredns-tlsplus/g' plugin.cfg
+
+# Get the modules
+go get github.com/mariuskimmina/coredns-tlsplus
+
+# Generate Files
+go generate
+
+# Tidy the modules
+go mod tidy
+
+# Compile
+go build
+```
+
+
 ### Automatic
+
+To use this plugin for automatic certificate management you have to fullfill the following requirements:
+* Own a domain
+* Setup CoreDNS as the authoritative DNS server for that domain
 
 When CoreDNS is setup as the authoritative DNS Server for a domain such as `example.com`, all you need to add to your corefile to start serving DoT or DoH is the following:
 
