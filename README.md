@@ -31,16 +31,13 @@ First you need to compile CoreDNS with this plugin
 git clone https://github.com/coredns/coredns
 cd coredns
 
-# Add this plugin to the plugin.cfg
-sed 's/tls:tls/tls:github.com\/mariuskimina\/coredns-tlsplus/g' plugin.cfg
+# replace the original tls plugin with this tlsplus plugin
+sed -i 's/tls:tls/tls:github.com\/mariuskimina\/coredns-tlsplus/g' plugin.cfg
 
-# Get the modules
+# Get the module
 go get github.com/mariuskimmina/coredns-tlsplus
 
-# Generate Files
-go generate
-
-# Tidy the modules
+# Tidy modules
 go mod tidy
 
 # Compile
