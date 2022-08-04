@@ -145,9 +145,9 @@ https://mydomain.com {
 ```
 
 ## References
-ACME RFC: https://datatracker.ietf.org/doc/html/rfc8555
-Pebble: https://github.com/letsencrypt/pebble
-ACME Challenges: https://letsencrypt.org/docs/challenge-types/
+ACME RFC: https://datatracker.ietf.org/doc/html/rfc8555  
+Pebble: https://github.com/letsencrypt/pebble  
+ACME Challenges: https://letsencrypt.org/docs/challenge-types/  
 
 [ACME]: https://datatracker.ietf.org/doc/html/rfc8555
 [Let's Encrypt]: https://letsencrypt.org/
