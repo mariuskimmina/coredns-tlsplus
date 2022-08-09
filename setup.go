@@ -69,7 +69,7 @@ func parseTLS(c *caddy.Controller) error {
 			var domainNameACME string
 			var ca string
 			var caCert string
-            var port string
+			var port string
 			//certPath := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
 
 			for c.NextBlock() {
@@ -110,15 +110,15 @@ func parseTLS(c *caddy.Controller) error {
 				}
 			}
 
-            // the ACME DNS-01 Challenge doesn't work with other ports than 53
-            // this option is really only there to use in tests with Pebble
-            portNumber := 53
-            if port != "" {
-                portNumber, err = strconv.Atoi(port)
-                if err != nil {
-                    log.Errorf("Failed to convert port argument to integer: %v \n", err)
-                }
-            }
+			// the ACME DNS-01 Challenge doesn't work with other ports than 53
+			// this option is really only there to use in tests with Pebble
+			portNumber := 53
+			if port != "" {
+				portNumber, err = strconv.Atoi(port)
+				if err != nil {
+					log.Errorf("Failed to convert port argument to integer: %v \n", err)
+				}
+			}
 
 			manager := NewACMEManager(config, domainNameACME, ca, caCert, portNumber)
 

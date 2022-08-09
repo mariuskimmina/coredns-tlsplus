@@ -221,7 +221,7 @@ func TestRenewal(t *testing.T) {
 			// wait for certificate to expire
 			time.Sleep(80 * time.Second)
 
-            r, _, err := client.Exchange(m, tcp)
+			r, _, err := client.Exchange(m, tcp)
 
 			if err != nil {
 				if err.Error() == "x509: cannot validate certificate for :: because it doesn't contain any IP SANs" {
@@ -232,7 +232,7 @@ func TestRenewal(t *testing.T) {
 			}
 
 			if n := len(r.Answer); n != tc.AnswerLength {
-                t.Errorf("Expected %v answers, got %v", tc.AnswerLength, n)
+				t.Errorf("Expected %v answers, got %v", tc.AnswerLength, n)
 			}
 
 			//if tc.AnswerLength > 0 {
@@ -245,5 +245,6 @@ func TestRenewal(t *testing.T) {
 			//t.Errorf("Expected 2 RRs in additional section, but got %d", n)
 			//}
 			//}
-		}) }
+		})
+	}
 }

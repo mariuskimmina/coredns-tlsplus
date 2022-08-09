@@ -14,7 +14,7 @@ import (
 )
 
 type DNSSolver struct {
-    Port    int 
+	Port int
 	DNS  *ACMEServer
 }
 

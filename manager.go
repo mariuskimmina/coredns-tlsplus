@@ -24,35 +24,35 @@ type ACMEManager struct {
 
 // NewACMEManager create a new ACMEManager
 func NewACMEManager(config *dnsserver.Config, zone string, ca string, caCert string, port int) *ACMEManager {
-    //TODO: change this
+	//TODO: change this
 	if ca == "" {
 		ca = "localhost:14001/dir" //pebble default
 	}
 
 	pool, err := x509.SystemCertPool()
 	if err != nil {
-        log.Errorf("Failed to get system pool of trusted certificates: %v \n", err)
+		log.Errorf("Failed to get system pool of trusted certificates: %v \n", err)
 	}
 
-    if caCert != "" {
-        certbytes, err := os.ReadFile(caCert)
-        if err != nil {
-            log.Errorf("Failed to read certificate provided by cacert option: %v \n", err)
-        }
-        pemcert, _ := pem.Decode(certbytes)
-        if pemcert == nil {
-            fmt.Println("pemcert not found")
-        }
-        cert, err := x509.ParseCertificate(pemcert.Bytes)
-        if err != nil {
-            log.Errorf("Failed to parse certificate provided by cacert option: %v \n", err)
-        }
-        pool.AddCert(cert)
-    }
+	if caCert != "" {
+		certbytes, err := os.ReadFile(caCert)
+		if err != nil {
+			log.Errorf("Failed to read certificate provided by cacert option: %v \n", err)
+		}
+		pemcert, _ := pem.Decode(certbytes)
+		if pemcert == nil {
+			fmt.Println("pemcert not found")
+		}
+		cert, err := x509.ParseCertificate(pemcert.Bytes)
+		if err != nil {
+			log.Errorf("Failed to parse certificate provided by cacert option: %v \n", err)
+		}
+		pool.AddCert(cert)
+	}
 
 	solver := &DNSSolver{
-        Port: port,
-    }
+		Port: port,
+	}
 
 	certmagic.DefaultACME.Email = "test@test.com"
 
