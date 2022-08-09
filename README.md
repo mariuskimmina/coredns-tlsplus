@@ -44,12 +44,12 @@ go mod tidy
 go build
 ```
 
-
 ### Automatic
 
 To use this plugin for automatic certificate management you have to fullfill the following requirements:
 * Own a domain
-* Setup CoreDNS as the authoritative DNS server for that domain
+* Setup CoreDNS on a publicly reachable IP
+* Setup CoreDNS as the authoritative DNS server for your domain
 * Port 53 - While CoreDNS may serve DNS over TLS on any port, during startup the plugin will use port 53 to solve the [ACME Challenge][Challenge]
 
 When CoreDNS is setup as the authoritative DNS Server for a domain such as `example.com`, all you need to add to your corefile to start serving DoT or DoH is the following:
@@ -69,8 +69,8 @@ tls://mydomain.com {
         domain ns1.mydomain.com
     }
     hosts {
-        10.6.6.2 mydomain.com
-        10.6.6.3 ns1.mydomain.com
+        xxx.xxx.xxx.xxx mydomain.com
+        xxx.xxx.xxx.xxx ns1.mydomain.com
     }
 }
 
@@ -79,15 +79,15 @@ https://mydomain.com {
         domain ns1.mydomain.com
     }
     hosts {
-        10.6.6.2 mydomain.com
-        10.6.6.3 ns1.mydomain.com
+        xxx.xxx.xxx.xxx mydomain.com
+        xxx.xxx.xxx.xxx ns1.mydomain.com
     }
 }
 
 mydomain.com {
     hosts {
-        10.6.6.2 mydomain.com
-        10.6.6.3 ns1.mydomain.com
+        xxx.xxx.xxx.xxx mydomain.com
+        xxx.xxx.xxx.xxx ns1.mydomain.com
     }
 }
 ```
