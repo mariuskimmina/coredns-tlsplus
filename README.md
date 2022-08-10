@@ -32,16 +32,16 @@ git clone https://github.com/coredns/coredns
 cd coredns
 
 # replace the original tls plugin with this tlsplus plugin
-sed -i 's/tls:tls/tls:github.com\/mariuskimina\/coredns-tlsplus/g' plugin.cfg
+sed -i 's/tls:tls/tls:github.com\/mariuskimmina\/coredns-tlsplus/g' plugin.cfg
 
 # Get the module
 go get github.com/mariuskimmina/coredns-tlsplus
 
-# Tidy modules
-go mod tidy
+
+make gen
 
 # Compile
-go build
+make
 ```
 
 ### Automatic
