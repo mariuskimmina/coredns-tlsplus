@@ -78,31 +78,31 @@ func parseTLS(c *caddy.Controller) error {
 				case argDomain:
 					domainArgs := c.RemainingArgs()
 					if len(domainArgs) > 1 {
-						return plugin.Error("tls", c.Errf("To many arguments to domain"))
+						return plugin.Error("tls", c.Errf("Too many arguments to domain"))
 					}
 					domainNameACME = domainArgs[0]
 				case argCa:
 					caArgs := c.RemainingArgs()
 					if len(caArgs) > 1 {
-						return plugin.Error("tls", c.Errf("To many arguments to ca"))
+						return plugin.Error("tls", c.Errf("Too many arguments to ca"))
 					}
 					ca = caArgs[0]
 				case argCaCert:
 					caCertArgs := c.RemainingArgs()
 					if len(caCertArgs) > 1 {
-						return plugin.Error("tls", c.Errf("To many arguments to cacert"))
+						return plugin.Error("tls", c.Errf("Too many arguments to cacert"))
 					}
 					caCert = caCertArgs[0]
 				case argPort:
 					portArgs := c.RemainingArgs()
 					if len(portArgs) > 1 {
-						return plugin.Error("tls", c.Errf("To many arguments to port"))
+						return plugin.Error("tls", c.Errf("Too many arguments to port"))
 					}
 					port = portArgs[0]
 				case argCertPath:
 					certPathArgs := c.RemainingArgs()
 					if len(certPathArgs) > 1 {
-						return plugin.Error("tls", c.Errf("To many arguments to CertPath"))
+						return plugin.Error("tls", c.Errf("Too many arguments to CertPath"))
 					}
 					//certPath = certPathArgs[0]
 				default:
