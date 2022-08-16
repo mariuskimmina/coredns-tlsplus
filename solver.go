@@ -24,20 +24,22 @@ type ACMEServer struct {
 	readyChan chan string
 }
 
+// Start starts a dns.Server that can solve the ACME Challenge, which means it answer on TXT requests
+// that start with _acme-challenge - this server will ignore all other requests
 func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
-	log.Info("ACME DNS-Server starts")
+	log.Debug("ACME DNS-Server starts")
 	as.m.Lock()
 	as.server = &dns.Server{PacketConn: p, Net: "udp", Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
 		acme_request := true
 		state := request.Request{W: w, Req: r}
 
-		log.Infof("Received DNS request | name: %s, type: %s, source ip: %s \n", state.Name(), state.Type(), state.IP())
+		log.Debugf("Received DNS request | name: %s, type: %s, source ip: %s \n", state.Name(), state.Type(), state.IP())
 		hdr := dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeTXT, Class: dns.ClassANY, Ttl: 0}
 		m := new(dns.Msg)
 		m.SetReply(r)
 
 		if state.QType() == dns.TypeCAA {
-			log.Info("Answering CAA request:", state.Name())
+			log.Debug("Answering CAA request:", state.Name())
 			m.Answer = append(m.Answer, &dns.CAA{Hdr: hdr, Value: "letsencrypt.org"})
 			w.WriteMsg(m)
 			return
@@ -52,7 +54,7 @@ func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 		}
 
 		if !acme_request {
-			log.Infof("Ignoring DNS request name: %s\n", state.Name())
+			log.Debugf("Ignoring DNS request name: %s\n", state.Name())
 			return
 		}
 
@@ -67,6 +69,7 @@ func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 	return as.server.ActivateAndServe()
 }
 
+// ShutDown is wrapper around dns.Server.shutdown()
 func (as *ACMEServer) ShutDown() error {
 	err := as.server.Shutdown()
 	return err
@@ -77,6 +80,7 @@ const (
 	pluginName         = "tlsplus"
 )
 
+// check for the prefix _acme-challenge
 func checkDNSChallenge(zone string) bool {
 	return strings.HasPrefix(zone, dnsChallengeString)
 }
@@ -106,6 +110,7 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 	}
 
 	go func() {
+        // start a dns.server that runs in a seperate goroutine
 		err := d.DNS.Start(l, challenge)
 		if err != nil {
 			log.Debug("Received Error from ServePacket")
@@ -114,28 +119,25 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 	return nil
 }
 
+// Wait waits for the dns.server that we start in Present() to be ready
 func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 	select {
 	case <-d.DNS.readyChan:
 		log.Info("ACME Server is ready")
 		return nil
 	case <-time.After(4 * time.Second):
-		// TODO: What do we do if this takes too long?
-		log.Error("Failed to obtain certificate, DNS-Server took to long to start")
+        // Wait no longer than 4 seconds
+		log.Warning("ACME Server take too long to confirm ready")
 		return nil
 	}
-	return nil
 }
 
 // CleanUp is called after a challenge is finished, whether
-// successful or not. It MUST free/remove any resources it
-// allocated/created during Present. It SHOULD NOT require
-// that Present ran successfully. It MUST return quickly.
+// successful or not. It stops the dns.server that we started in Present()
 func (d *DNSSolver) CleanUp(ctx context.Context, challenge acme.Challenge) error {
 	err := d.DNS.ShutDown()
 	if err != nil {
-		fmt.Println("Error shutting down")
-		fmt.Println(err)
+        log.Errorf("Failed to Shutdown the ACME DNS-Server: %v \n", err)
 	}
 	return nil
 }

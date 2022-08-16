@@ -7,7 +7,6 @@ import (
 	"time"
 
 	ctls "crypto/tls"
-	"fmt"
 
 	"github.com/caddyserver/certmagic"
 	"github.com/coredns/caddy"
@@ -151,7 +150,6 @@ func parseTLS(c *caddy.Controller) error {
 			})
 		} else {
 			//No ACME part - plugin continues to work like the normal tls plugin
-			fmt.Println("Uing manually conigured certificate")
 			if len(args) < 2 || len(args) > 3 {
 				return plugin.Error("tls", c.ArgErr())
 			}
