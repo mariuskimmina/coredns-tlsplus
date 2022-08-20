@@ -110,7 +110,7 @@ func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error
 	}
 
 	go func() {
-        // start a dns.server that runs in a seperate goroutine
+		// start a dns.server that runs in a seperate goroutine
 		err := d.DNS.Start(l, challenge)
 		if err != nil {
 			log.Debug("Received Error from ServePacket")
@@ -126,7 +126,7 @@ func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 		log.Info("ACME Server is ready")
 		return nil
 	case <-time.After(4 * time.Second):
-        // Wait no longer than 4 seconds
+		// Wait no longer than 4 seconds
 		log.Warning("ACME Server take too long to confirm ready")
 		return nil
 	}
@@ -137,7 +137,7 @@ func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 func (d *DNSSolver) CleanUp(ctx context.Context, challenge acme.Challenge) error {
 	err := d.DNS.ShutDown()
 	if err != nil {
-        log.Errorf("Failed to Shutdown the ACME DNS-Server: %v \n", err)
+		log.Errorf("Failed to Shutdown the ACME DNS-Server: %v \n", err)
 	}
 	return nil
 }

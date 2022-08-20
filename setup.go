@@ -2,6 +2,7 @@ package tls
 
 import (
 	"context"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -69,7 +70,11 @@ func parseTLS(c *caddy.Controller) error {
 			var ca string
 			var caCert string
 			var port string
-			//certPath := "/home/marius/.local/share/certmagic/certificates/example.com/example.com.crt"
+			userHome, homeExists := os.LookupEnv("HOME")
+			if !homeExists {
+				log.Error("Environment Variable $HOME needs to be set.")
+			}
+			certPath := userHome + "/.local/share/certmagic/"
 
 			for c.NextBlock() {
 				token := c.Val()
@@ -103,7 +108,7 @@ func parseTLS(c *caddy.Controller) error {
 					if len(certPathArgs) > 1 {
 						return plugin.Error("tls", c.Errf("Too many arguments to CertPath"))
 					}
-					//certPath = certPathArgs[0]
+					certPath = certPathArgs[0]
 				default:
 					return c.Errf("unknown argument to acme '%s'", token)
 				}
@@ -119,7 +124,7 @@ func parseTLS(c *caddy.Controller) error {
 				}
 			}
 
-			manager := NewACMEManager(config, domainNameACME, ca, caCert, portNumber)
+			manager := NewACMEManager(config, domainNameACME, ca, certPath, caCert, portNumber)
 
 			var names []string
 			names = append(names, manager.Zone)

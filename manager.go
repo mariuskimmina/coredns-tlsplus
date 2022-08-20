@@ -23,8 +23,7 @@ type ACMEManager struct {
 }
 
 // NewACMEManager create a new ACMEManager
-func NewACMEManager(config *dnsserver.Config, zone string, ca string, caCert string, port int) *ACMEManager {
-	//TODO: change this
+func NewACMEManager(config *dnsserver.Config, zone string, ca string, path string, caCert string, port int) *ACMEManager {
 	if ca == "" {
 		ca = "localhost:14001/dir" //pebble default
 	}
@@ -69,6 +68,11 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string, caCert str
 
 	acmeConfigTemplate := NewCertmagicConfig()
 	acmeConfigTemplate.RenewalWindowRatio = 0.5
+
+	acmeConfigTemplate.Storage = &certmagic.FileStorage{
+		Path: path,
+	}
+
 	cache := certmagic.NewCache(certmagic.CacheOptions{
 		RenewCheckInterval: 5 * time.Second,
 		GetConfigForCert: func(cert certmagic.Certificate) (*certmagic.Config, error) {

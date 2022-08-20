@@ -29,7 +29,7 @@ func TestObtainCertOnStartup(t *testing.T) {
 		Answer          []dns.RR
 		AnswerLength    int
 		WhoAmI          bool
-        ExpectedIP      string
+		ExpectedIP      string
 	}{
 		{
 			name: "Test manual cert and key",
@@ -42,7 +42,7 @@ func TestObtainCertOnStartup(t *testing.T) {
 			Answer:       []dns.RR{},
 			AnswerLength: 0,
 			WhoAmI:       true,
-            ExpectedIP:   "",
+			ExpectedIP:   "",
 		},
 		{
 			name: "Test ACME whoami",
@@ -50,6 +50,7 @@ func TestObtainCertOnStartup(t *testing.T) {
                 tls acme {
                     domain example.com
                     ca     localhost:14000//dir
+                    certpath /tmp/certmagic/
                     cacert test/certs/pebble.minica.pem
                     port 1053
                 }
@@ -60,7 +61,7 @@ func TestObtainCertOnStartup(t *testing.T) {
 			Answer:       []dns.RR{},
 			AnswerLength: 0,
 			WhoAmI:       true,
-            ExpectedIP:   "",
+			ExpectedIP:   "",
 		},
 		{
 			name: "Test ACME forward to Google",
@@ -68,6 +69,7 @@ func TestObtainCertOnStartup(t *testing.T) {
                 tls acme {
                     domain example.com
                     ca     localhost:14000/dir
+                    certpath /tmp/certmagic/
                     cacert test/certs/pebble.minica.pem
                     port 1053
                 }
@@ -78,7 +80,7 @@ func TestObtainCertOnStartup(t *testing.T) {
 			Answer:       []dns.RR{},
 			AnswerLength: 1,
 			WhoAmI:       false,
-            ExpectedIP:   "93.184.216.34",
+			ExpectedIP:   "93.184.216.34",
 		},
 	}
 	go func() {
@@ -117,7 +119,7 @@ func TestObtainCertOnStartup(t *testing.T) {
 			if n := len(r.Answer); n != tc.AnswerLength {
 				t.Fatalf("Expected %v answers, got %v", tc.AnswerLength, n)
 			}
-            if tc.AnswerLength > 0 {
+			if tc.AnswerLength > 0 {
 				if r.Answer[0].(*dns.A).A.String() != tc.ExpectedIP {
 					t.Errorf("Expected %s for example.com, got: %s", tc.ExpectedIP, r.Answer[0].(*dns.A).A.String())
 				}
@@ -181,7 +183,7 @@ func TestObtainCertOnStartup(t *testing.T) {
 //                    cacert test/certs/pebble.minica.pem
 //                    port   1053
 //                }
-//                whoami  
+//                whoami
 //            }`,
 //			Qname:        "example.com.",
 //			Qtype:        dns.TypeTXT,

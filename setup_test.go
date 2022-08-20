@@ -35,7 +35,7 @@ func TestTLS(t *testing.T) {
 		// acme
 		// positive
 		{"tls acme {\ndomain example.com\n}", false, "", ""},
-        {"tls acme {\ndomain example.com\nca localhost:14001\n}", false, "", ""},
+		{"tls acme {\ndomain example.com\nca localhost:14001\n}", false, "", ""},
 		// negative
 		{"tls acme {\nunknown\n}", true, "", "unknown argument to acme"},
 		{"tls acme {\ndomain none none\n}", true, "", "Too many arguments to domain"},
