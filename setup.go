@@ -36,13 +36,13 @@ var (
 )
 
 const (
-	argDomain   = "domain"
-    argCheckInternal = "checkinterval"
-	argCa       = "ca"
-	argCaCert   = "cacert"
-    argEmail    = "email"
-	argCertPath = "certpath"
-	argPort     = "port"
+	argDomain        = "domain"
+	argCheckInternal = "checkinterval"
+	argCa            = "ca"
+	argCaCert        = "cacert"
+	argEmail         = "email"
+	argCertPath      = "certpath"
+	argPort          = "port"
 )
 
 func parseTLS(c *caddy.Controller) error {
@@ -70,8 +70,8 @@ func parseTLS(c *caddy.Controller) error {
 			var ca string
 			var caCert string
 			var port string
-            var email string
-            checkInterval := 15
+			var email string
+			checkInterval := 15
 			userHome, homeExists := os.LookupEnv("HOME")
 			if !homeExists {
 				log.Error("Environment Variable $HOME needs to be set.")
@@ -122,19 +122,18 @@ func parseTLS(c *caddy.Controller) error {
 					if len(checkIntervalArgs) > 1 {
 						return plugin.Error("tls", c.Errf("Too many arguments to checkInterval"))
 					}
-                    interval, err := strconv.Atoi(checkIntervalArgs[0])
-                    if err != nil {
-                        return plugin.Error("Failed to convert checkInterval argument to integer: %v \n", err)
-                    }
-                    checkInterval = interval
+					interval, err := strconv.Atoi(checkIntervalArgs[0])
+					if err != nil {
+						return plugin.Error("Failed to convert checkInterval argument to integer: %v \n", err)
+					}
+					checkInterval = interval
 				default:
 					return c.Errf("unknown argument to acme '%s'", token)
 				}
 			}
 
-
-            // the ACME DNS-01 Challenge doesn't work with other ports than 53
-            // this option is really only there to use in tests with Pebble
+			// the ACME DNS-01 Challenge doesn't work with other ports than 53
+			// this option is really only there to use in tests with Pebble
 			portNumber := 53
 			if port != "" {
 				portNumber, err = strconv.Atoi(port)
@@ -149,9 +148,9 @@ func parseTLS(c *caddy.Controller) error {
 			names = append(names, manager.Zone)
 
 			tlsconf, cert, err = manager.configureTLSwithACME(ctx)
-            if err != nil {
-                log.Errorf("Failed to setup TLS automatically: %v \n", err)
-            }
+			if err != nil {
+				log.Errorf("Failed to setup TLS automatically: %v \n", err)
+			}
 			config.TLSConfig = tlsconf
 
 			once.Do(func() {

@@ -16,9 +16,9 @@ import (
 )
 
 type ACMEManager struct {
-	Config *certmagic.Config     
-	Issuer *certmagic.ACMEIssuer 
-	Zone   string 
+	Config *certmagic.Config
+	Issuer *certmagic.ACMEIssuer
+	Zone   string
 }
 
 // NewACMEManager create a new ACMEManager
@@ -27,12 +27,12 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string, path strin
 		ca = "localhost:14001/dir" //pebble default
 	}
 
-    // default email if none is provided
-    // providing a reail email is recommended to receiv notifications for expiring certificates
-    // in case that something goes wrong
-    if email == "" {
-        email = "test@test.com"
-    }
+	// default email if none is provided
+	// providing a reail email is recommended to receiv notifications for expiring certificates
+	// in case that something goes wrong
+	if email == "" {
+		email = "test@test.com"
+	}
 
 	pool, err := x509.SystemCertPool()
 	if err != nil {
@@ -46,7 +46,7 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string, path strin
 		}
 		pemcert, _ := pem.Decode(certbytes)
 		if pemcert == nil {
-            log.Errorf("Failed to decode CaCert: %v \n", err)
+			log.Errorf("Failed to decode CaCert: %v \n", err)
 		}
 		cert, err := x509.ParseCertificate(pemcert.Bytes)
 		if err != nil {
@@ -57,7 +57,7 @@ func NewACMEManager(config *dnsserver.Config, zone string, ca string, path strin
 
 	readyChan := make(chan string)
 	solver := &DNSSolver{
-		Port: port,
+		Port:      port,
 		readyChan: readyChan,
 	}
 
@@ -104,7 +104,7 @@ func (am *ACMEManager) configureTLSwithACME(ctx context.Context) (*tls.Config, *
 	// try loading existing certificate
 	cert, err = am.Config.CacheManagedCertificate(ctx, am.Zone)
 	if err != nil {
-		log.Info("Obtaining TLS Certificate")
+		log.Info("Obtaining TLS Certificate, may take a moment")
 		if !errors.Is(err, fs.ErrNotExist) {
 			return nil, nil, err
 		}

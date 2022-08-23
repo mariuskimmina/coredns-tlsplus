@@ -11,7 +11,7 @@ import (
 
 func setupACME(readyChan chan string) {
 	acmeServer := &DNSSolver{
-        Port: 2053,
+		Port:      2053,
 		readyChan: readyChan,
 	}
 	addr := net.UDPAddr{

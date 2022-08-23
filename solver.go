@@ -14,12 +14,11 @@ import (
 
 // DNSSolver is minimal dns.Server that can solve the ACME Challenge
 type DNSSolver struct {
-	Port int
+	Port      int
 	m         sync.Mutex
 	server    *dns.Server
 	readyChan chan string
 }
-
 
 // Start starts a dns.Server that can solve the ACME Challenge, which means it answer on TXT requests
 // that start with _acme-challenge - this server will ignore all other requests
@@ -31,16 +30,13 @@ func (ds *DNSSolver) Start(p net.PacketConn, challenge acme.Challenge) error {
 		state := request.Request{W: w, Req: r}
 
 		log.Debugf("Received DNS request | name: %s, type: %s, source ip: %s \n", state.Name(), state.Type(), state.IP())
-		hdr := dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeTXT, Class: dns.ClassANY, Ttl: 0}
 		m := new(dns.Msg)
 		m.SetReply(r)
 
-		//if state.QType() == dns.TypeCAA {
-			//log.Debug("Answering CAA request:", state.Name())
-			//m.Answer = append(m.Answer, &dns.CAA{Hdr: hdr, Value: "letsencrypt.org"})
-			//w.WriteMsg(m)
-			//return
-		//}
+		if state.QType() == dns.TypeCAA {
+			hdr := dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeCAA, Class: dns.ClassANY, Ttl: 0}
+			m.Answer = append(m.Answer, &dns.CAA{Hdr: hdr})
+		}
 
 		if state.QType() != dns.TypeTXT {
 			acme_request = false
@@ -50,13 +46,11 @@ func (ds *DNSSolver) Start(p net.PacketConn, challenge acme.Challenge) error {
 			acme_request = false
 		}
 
-		if !acme_request {
-			log.Debugf("Ignoring DNS request name: %s\n", state.Name())
-			return
+		if acme_request {
+			log.Info("Answering ACME DNS request:", state.Name())
+			hdr := dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeTXT, Class: dns.ClassANY, Ttl: 0}
+			m.Answer = append(m.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
 		}
-
-		log.Info("Answering DNS request:", state.Name())
-		m.Answer = append(m.Answer, &dns.TXT{Hdr: hdr, Txt: []string{challenge.DNS01KeyAuthorization()}})
 		w.WriteMsg(m)
 		return
 	})}
@@ -95,14 +89,14 @@ func (ds *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) erro
 
 	l, err := net.ListenUDP("udp", &addr)
 	if err != nil {
-        log.Errorf("Failed to create Listener: %v \n", err)
+		log.Errorf("Failed to create Listener: %v \n", err)
 	}
 
 	go func() {
 		// start a dns.server that runs in a seperate goroutine
 		err := ds.Start(l, challenge)
 		if err != nil {
-            log.Errorf("Failed to start DNS Server for ACME Challenge: %v \n", err)
+			log.Errorf("Failed to start DNS Server for ACME Challenge: %v \n", err)
 		}
 	}()
 	return nil
