@@ -37,8 +37,10 @@ var (
 
 const (
 	argDomain   = "domain"
+    argCheckInternal = "checkinterval"
 	argCa       = "ca"
 	argCaCert   = "cacert"
+    argEmail    = "email"
 	argCertPath = "certpath"
 	argPort     = "port"
 )
@@ -60,16 +62,16 @@ func parseTLS(c *caddy.Controller) error {
 		args := c.RemainingArgs()
 
 		if args[0] == "acme" {
-			log.Info("Starting ACME Setup")
-			// start of the acme flow,
+			log.Debug("Starting ACME Setup")
 
-			//check if cert is present and valid
 			ctx := context.Background()
 
 			var domainNameACME string
 			var ca string
 			var caCert string
 			var port string
+            var email string
+            checkInterval := 15
 			userHome, homeExists := os.LookupEnv("HOME")
 			if !homeExists {
 				log.Error("Environment Variable $HOME needs to be set.")
@@ -97,6 +99,12 @@ func parseTLS(c *caddy.Controller) error {
 						return plugin.Error("tls", c.Errf("Too many arguments to cacert"))
 					}
 					caCert = caCertArgs[0]
+				case argEmail:
+					emailArgs := c.RemainingArgs()
+					if len(emailArgs) > 1 {
+						return plugin.Error("tls", c.Errf("Too many arguments to email"))
+					}
+					email = emailArgs[0]
 				case argPort:
 					portArgs := c.RemainingArgs()
 					if len(portArgs) > 1 {
@@ -109,13 +117,24 @@ func parseTLS(c *caddy.Controller) error {
 						return plugin.Error("tls", c.Errf("Too many arguments to CertPath"))
 					}
 					certPath = certPathArgs[0]
+				case argCheckInternal:
+					checkIntervalArgs := c.RemainingArgs()
+					if len(checkIntervalArgs) > 1 {
+						return plugin.Error("tls", c.Errf("Too many arguments to checkInterval"))
+					}
+                    interval, err := strconv.Atoi(checkIntervalArgs[0])
+                    if err != nil {
+                        return plugin.Error("Failed to convert checkInterval argument to integer: %v \n", err)
+                    }
+                    checkInterval = interval
 				default:
 					return c.Errf("unknown argument to acme '%s'", token)
 				}
 			}
 
-			// the ACME DNS-01 Challenge doesn't work with other ports than 53
-			// this option is really only there to use in tests with Pebble
+
+            // the ACME DNS-01 Challenge doesn't work with other ports than 53
+            // this option is really only there to use in tests with Pebble
 			portNumber := 53
 			if port != "" {
 				portNumber, err = strconv.Atoi(port)
@@ -124,12 +143,15 @@ func parseTLS(c *caddy.Controller) error {
 				}
 			}
 
-			manager := NewACMEManager(config, domainNameACME, ca, certPath, caCert, portNumber)
+			manager := NewACMEManager(config, domainNameACME, ca, certPath, caCert, portNumber, email)
 
 			var names []string
 			names = append(names, manager.Zone)
 
 			tlsconf, cert, err = manager.configureTLSwithACME(ctx)
+            if err != nil {
+                log.Errorf("Failed to setup TLS automatically: %v \n", err)
+            }
 			config.TLSConfig = tlsconf
 
 			once.Do(func() {
@@ -137,7 +159,7 @@ func parseTLS(c *caddy.Controller) error {
 				go func() {
 					log.Debug("Starting certificate renewal loop in the background")
 					for {
-						time.Sleep(40 * time.Second)
+						time.Sleep(time.Duration(checkInterval) * time.Minute)
 						if cert.NeedsRenewal(manager.Config) {
 							log.Info("Certificate expiring soon, initializing reload")
 							r.renew <- true
@@ -148,7 +170,7 @@ func parseTLS(c *caddy.Controller) error {
 			})
 			shutOnce.Do(func() {
 				c.OnFinalShutdown(func() error {
-					log.Info("Quiting renewal checker")
+					log.Debug("Quiting renewal checker")
 					r.quit <- true
 					return nil
 				})

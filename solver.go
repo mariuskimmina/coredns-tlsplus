@@ -2,7 +2,6 @@ package tls
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"strings"
 	"sync"
@@ -13,23 +12,21 @@ import (
 	"github.com/miekg/dns"
 )
 
+// DNSSolver is minimal dns.Server that can solve the ACME Challenge
 type DNSSolver struct {
 	Port int
-	DNS  *ACMEServer
-}
-
-type ACMEServer struct {
-	m         sync.Mutex  // protects the servers
-	server    *dns.Server // 0 is a net.Listener, 1 is a net.PacketConn (a *UDPConn) in our case.
+	m         sync.Mutex
+	server    *dns.Server
 	readyChan chan string
 }
 
+
 // Start starts a dns.Server that can solve the ACME Challenge, which means it answer on TXT requests
 // that start with _acme-challenge - this server will ignore all other requests
-func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
+func (ds *DNSSolver) Start(p net.PacketConn, challenge acme.Challenge) error {
 	log.Debug("ACME DNS-Server starts")
-	as.m.Lock()
-	as.server = &dns.Server{PacketConn: p, Net: "udp", Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
+	ds.m.Lock()
+	ds.server = &dns.Server{PacketConn: p, Net: "udp", Handler: dns.HandlerFunc(func(w dns.ResponseWriter, r *dns.Msg) {
 		acme_request := true
 		state := request.Request{W: w, Req: r}
 
@@ -38,12 +35,12 @@ func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 		m := new(dns.Msg)
 		m.SetReply(r)
 
-		if state.QType() == dns.TypeCAA {
-			log.Debug("Answering CAA request:", state.Name())
-			m.Answer = append(m.Answer, &dns.CAA{Hdr: hdr, Value: "letsencrypt.org"})
-			w.WriteMsg(m)
-			return
-		}
+		//if state.QType() == dns.TypeCAA {
+			//log.Debug("Answering CAA request:", state.Name())
+			//m.Answer = append(m.Answer, &dns.CAA{Hdr: hdr, Value: "letsencrypt.org"})
+			//w.WriteMsg(m)
+			//return
+		//}
 
 		if state.QType() != dns.TypeTXT {
 			acme_request = false
@@ -63,15 +60,15 @@ func (as *ACMEServer) Start(p net.PacketConn, challenge acme.Challenge) error {
 		w.WriteMsg(m)
 		return
 	})}
-	as.m.Unlock()
+	ds.m.Unlock()
 
-	as.readyChan <- "ready"
-	return as.server.ActivateAndServe()
+	ds.readyChan <- "ready"
+	return ds.server.ActivateAndServe()
 }
 
 // ShutDown is wrapper around dns.Server.shutdown()
-func (as *ACMEServer) ShutDown() error {
-	err := as.server.Shutdown()
+func (ds *DNSSolver) ShutDown() error {
+	err := ds.server.Shutdown()
 	return err
 }
 
@@ -88,42 +85,34 @@ func checkDNSChallenge(zone string) bool {
 // Present is called just before a challenge is initiated.
 // The implementation MUST prepare anything that is necessary
 // for completing the challenge
-// for CoreDNS that means that we need to start the DNS Server,
-// serve exactly one request and
-func (d *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error {
-	log.Info("Start of DNS Solver Present")
-	readyChan := make(chan string)
-	acmeServer := &ACMEServer{
-		readyChan: readyChan,
-	}
-	d.DNS = acmeServer
-
+// for CoreDNS that means that we need to start a DNS Server
+// that can answer DNS requests for the Challenge
+func (ds *DNSSolver) Present(ctx context.Context, challenge acme.Challenge) error {
 	addr := net.UDPAddr{
-		Port: d.Port,
+		Port: ds.Port,
 		IP:   net.ParseIP("0.0.0.0"),
 	}
 
 	l, err := net.ListenUDP("udp", &addr)
 	if err != nil {
-		fmt.Println("Failed to create Listener")
-		fmt.Println(err)
+        log.Errorf("Failed to create Listener: %v \n", err)
 	}
 
 	go func() {
 		// start a dns.server that runs in a seperate goroutine
-		err := d.DNS.Start(l, challenge)
+		err := ds.Start(l, challenge)
 		if err != nil {
-			log.Debug("Received Error from ServePacket")
+            log.Errorf("Failed to start DNS Server for ACME Challenge: %v \n", err)
 		}
 	}()
 	return nil
 }
 
 // Wait waits for the dns.server that we start in Present() to be ready
-func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
+func (ds *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 	select {
-	case <-d.DNS.readyChan:
-		log.Info("ACME Server is ready")
+	case <-ds.readyChan:
+		log.Debug("ACME Challenge is ready")
 		return nil
 	case <-time.After(4 * time.Second):
 		// Wait no longer than 4 seconds
@@ -135,7 +124,7 @@ func (d *DNSSolver) Wait(ctx context.Context, challenge acme.Challenge) error {
 // CleanUp is called after a challenge is finished, whether
 // successful or not. It stops the dns.server that we started in Present()
 func (d *DNSSolver) CleanUp(ctx context.Context, challenge acme.Challenge) error {
-	err := d.DNS.ShutDown()
+	err := d.ShutDown()
 	if err != nil {
 		log.Errorf("Failed to Shutdown the ACME DNS-Server: %v \n", err)
 	}

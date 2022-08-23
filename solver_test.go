@@ -9,20 +9,9 @@ import (
 	"github.com/miekg/dns"
 )
 
-//func TestCheckDNSChallenge() {
-//_ = []struct {
-//name     string
-//question string
-//}{
-//{
-//name:     "ACME Challenge",
-//question: "_acme-challenge.example.com.",
-//},
-//}
-//}
-
 func setupACME(readyChan chan string) {
-	acmeServer := &ACMEServer{
+	acmeServer := &DNSSolver{
+        Port: 2053,
 		readyChan: readyChan,
 	}
 	addr := net.UDPAddr{
