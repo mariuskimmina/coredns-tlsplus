@@ -34,13 +34,13 @@ func TestTLS(t *testing.T) {
 
 		// acme
 		// positive
-		{"tls acme {\ndomain example.com\n}", false, "", ""},
+		//{"tls acme {\ndomain example.com\n}", false, "", ""},
 		{"tls acme {\ndomain example.com\nca localhost:14001\n}", false, "", ""},
 		// negative
 		{"tls acme {\nunknown\n}", true, "", "unknown argument to acme"},
 		{"tls acme {\ndomain none none\n}", true, "", "Too many arguments to domain"},
 		{"tls acme {\ndomain example.com\n ca none none\n}", true, "", "Too many arguments to ca"},
-		{"tls acme {\ndomain example.com\n certpath none none\n}", true, "", "Too many arguments to CertPath"},
+		{"tls acme {\ndomain example.com\n certpath none none\n}", true, "", "Too many arguments to certpath"},
 		{"tls acme {\ndomain example.com\n port none none\n}", true, "", "Too many arguments to port"},
 	}
 

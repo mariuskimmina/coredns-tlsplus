@@ -36,13 +36,11 @@ var (
 )
 
 const (
-	argDomain        = "domain"
-	argCheckInternal = "checkinterval"
-	argCa            = "ca"
-	argCaCert        = "cacert"
-	argEmail         = "email"
-	argCertPath      = "certpath"
-	argPort          = "port"
+	defaultCA            = "https://acme-v02.api.letsencrypt.org/directory"
+	defaultEmail         = "test@test.com"
+	defaultCheckInterval = 15
+	defaultPort          = 53
+	defaultCertPath      = "./local/share/certmagic"
 )
 
 func parseTLS(c *caddy.Controller) error {
@@ -67,10 +65,10 @@ func parseTLS(c *caddy.Controller) error {
 			ctx := context.Background()
 
 			var domainNameACME string
-			var ca string
 			var caCert string
 			var port string
 			var email string
+			ca := "https://acme-v02.api.letsencrypt.org/directory"
 			checkInterval := 15
 			userHome, homeExists := os.LookupEnv("HOME")
 			if !homeExists {
@@ -81,46 +79,46 @@ func parseTLS(c *caddy.Controller) error {
 			for c.NextBlock() {
 				token := c.Val()
 				switch token {
-				case argDomain:
+				case "domain":
 					domainArgs := c.RemainingArgs()
 					if len(domainArgs) > 1 {
 						return plugin.Error("tls", c.Errf("Too many arguments to domain"))
 					}
 					domainNameACME = domainArgs[0]
-				case argCa:
+				case "ca":
 					caArgs := c.RemainingArgs()
 					if len(caArgs) > 1 {
 						return plugin.Error("tls", c.Errf("Too many arguments to ca"))
 					}
 					ca = caArgs[0]
-				case argCaCert:
+				case "cacert":
 					caCertArgs := c.RemainingArgs()
 					if len(caCertArgs) > 1 {
 						return plugin.Error("tls", c.Errf("Too many arguments to cacert"))
 					}
 					caCert = caCertArgs[0]
-				case argEmail:
+				case "email":
 					emailArgs := c.RemainingArgs()
 					if len(emailArgs) > 1 {
 						return plugin.Error("tls", c.Errf("Too many arguments to email"))
 					}
 					email = emailArgs[0]
-				case argPort:
+				case "port":
 					portArgs := c.RemainingArgs()
 					if len(portArgs) > 1 {
 						return plugin.Error("tls", c.Errf("Too many arguments to port"))
 					}
 					port = portArgs[0]
-				case argCertPath:
+				case "certpath":
 					certPathArgs := c.RemainingArgs()
 					if len(certPathArgs) > 1 {
-						return plugin.Error("tls", c.Errf("Too many arguments to CertPath"))
+						return plugin.Error("tls", c.Errf("Too many arguments to certpath"))
 					}
 					certPath = certPathArgs[0]
-				case argCheckInternal:
+				case "checkinterval":
 					checkIntervalArgs := c.RemainingArgs()
 					if len(checkIntervalArgs) > 1 {
-						return plugin.Error("tls", c.Errf("Too many arguments to checkInterval"))
+						return plugin.Error("tls", c.Errf("Too many arguments to checkinterval"))
 					}
 					interval, err := strconv.Atoi(checkIntervalArgs[0])
 					if err != nil {
@@ -142,12 +140,18 @@ func parseTLS(c *caddy.Controller) error {
 				}
 			}
 
-			manager := NewACMEManager(config, domainNameACME, ca, certPath, caCert, portNumber, email)
+			pool, err := setupCertPool(caCert)
+			if err != nil {
+				log.Errorf("Failed to add the custom CA certfiicate to the pool of trusted certificates: %v, \n", err)
+			}
+			certmagicConfig := NewConfig(certPath)
+			certmagicIssuer := NewIssuer(certmagicConfig, ca, email, pool, portNumber)
+			certManager := NewCertManager(domainNameACME, certmagicConfig, certmagicIssuer)
 
 			var names []string
-			names = append(names, manager.Zone)
+			names = append(names, certManager.Zone)
 
-			tlsconf, cert, err = manager.configureTLSwithACME(ctx)
+			tlsconf, cert, err = certManager.configureTLSwithACME(ctx)
 			if err != nil {
 				log.Errorf("Failed to setup TLS automatically: %v \n", err)
 			}
@@ -159,7 +163,7 @@ func parseTLS(c *caddy.Controller) error {
 					log.Debug("Starting certificate renewal loop in the background")
 					for {
 						time.Sleep(time.Duration(checkInterval) * time.Minute)
-						if cert.NeedsRenewal(manager.Config) {
+						if cert.NeedsRenewal(certManager.Config) {
 							log.Info("Certificate expiring soon, initializing reload")
 							r.renew <- true
 						}

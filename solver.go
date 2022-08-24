@@ -33,6 +33,8 @@ func (ds *DNSSolver) Start(p net.PacketConn, challenge acme.Challenge) error {
 		m := new(dns.Msg)
 		m.SetReply(r)
 
+		// Answering CAA Requests is mandatory for some CA's.
+		// Let's Encrypt will not issue a Certificate if these requests time out
 		if state.QType() == dns.TypeCAA {
 			hdr := dns.RR_Header{Name: state.QName(), Rrtype: dns.TypeCAA, Class: dns.ClassANY, Ttl: 0}
 			m.Answer = append(m.Answer, &dns.CAA{Hdr: hdr})
