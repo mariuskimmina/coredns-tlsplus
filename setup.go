@@ -66,15 +66,15 @@ func parseTLS(c *caddy.Controller) error {
 
 			var domainNameACME string
 			var caCert string
-			var port string
-			var email string
-			ca := "https://acme-v02.api.letsencrypt.org/directory"
-			checkInterval := 15
+			port := defaultPort
+			email := defaultEmail
+			ca := defaultCA
+			checkInterval := defaultCheckInterval
 			userHome, homeExists := os.LookupEnv("HOME")
 			if !homeExists {
 				log.Error("Environment Variable $HOME needs to be set.")
 			}
-			certPath := userHome + "/.local/share/certmagic/"
+			certPath := userHome + defaultCertPath
 
 			for c.NextBlock() {
 				token := c.Val()
@@ -108,7 +108,10 @@ func parseTLS(c *caddy.Controller) error {
 					if len(portArgs) > 1 {
 						return plugin.Error("tls", c.Errf("Too many arguments to port"))
 					}
-					port = portArgs[0]
+					port, err = strconv.Atoi(portArgs[0])
+					if err != nil {
+						log.Errorf("Failed to convert port argument to integer: %v \n", err)
+					}
 				case "certpath":
 					certPathArgs := c.RemainingArgs()
 					if len(certPathArgs) > 1 {
@@ -130,22 +133,13 @@ func parseTLS(c *caddy.Controller) error {
 				}
 			}
 
-			// the ACME DNS-01 Challenge doesn't work with other ports than 53
-			// this option is really only there to use in tests with Pebble
-			portNumber := 53
-			if port != "" {
-				portNumber, err = strconv.Atoi(port)
-				if err != nil {
-					log.Errorf("Failed to convert port argument to integer: %v \n", err)
-				}
-			}
-
 			pool, err := setupCertPool(caCert)
 			if err != nil {
 				log.Errorf("Failed to add the custom CA certfiicate to the pool of trusted certificates: %v, \n", err)
 			}
+			solver := newDNSSolver(port)
 			certmagicConfig := NewConfig(certPath)
-			certmagicIssuer := NewIssuer(certmagicConfig, ca, email, pool, portNumber)
+			certmagicIssuer := NewIssuer(certmagicConfig, ca, email, pool, solver)
 			certManager := NewCertManager(domainNameACME, certmagicConfig, certmagicIssuer)
 
 			var names []string

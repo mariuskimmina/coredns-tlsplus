@@ -35,13 +35,16 @@ func NewConfig(path string) *certmagic.Config {
 	return acmeConfig
 }
 
-func NewIssuer(config *certmagic.Config, ca string, email string, pool *x509.CertPool, port int) *certmagic.ACMEIssuer {
+func newDNSSolver(port int) *DNSSolver {
 	readyChan := make(chan string)
 	solver := &DNSSolver{
 		Port:      port,
 		readyChan: readyChan,
 	}
+	return solver
+}
 
+func NewIssuer(config *certmagic.Config, ca string, email string, pool *x509.CertPool, solver *DNSSolver) *certmagic.ACMEIssuer {
 	certmagic.DefaultACME.Email = "test@test.com"
 	acmeIssuerTemplate := certmagic.ACMEIssuer{
 		Agreed:                  true,
