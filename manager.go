@@ -21,7 +21,7 @@ type CertManager struct {
 }
 
 func NewConfig(path string) *certmagic.Config {
-	acmeConfigTemplate := NewCertmagicConfig()
+	acmeConfigTemplate := certmagic.NewDefault()
 	acmeConfigTemplate.RenewalWindowRatio = 0.7
 	acmeConfigTemplate.Storage = &certmagic.FileStorage{
 		Path: path,
