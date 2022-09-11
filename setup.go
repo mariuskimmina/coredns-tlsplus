@@ -37,7 +37,7 @@ var (
 
 const (
 	defaultCA            = "https://acme-v02.api.letsencrypt.org/directory"
-	defaultEmail         = "test@test.com"
+	defaultEmail         = "doesnotexist@test.com"
 	defaultCheckInterval = 15
 	defaultPort          = 53
 	defaultCertPath      = "./local/share/certmagic"
@@ -54,9 +54,7 @@ func parseTLS(c *caddy.Controller) error {
 	if config.TLSConfig != nil {
 		return plugin.Error("tls", c.Errf("TLS already configured for this server instance"))
 	}
-	i := 1
 	for c.Next() {
-		i++
 		args := c.RemainingArgs()
 
 		if args[0] == "acme" {
