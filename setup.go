@@ -206,7 +206,10 @@ func parseTLS(c *caddy.Controller) error {
 			if err != nil {
 				return err
 			}
-			configureTLS(config, tlsconf, clientAuth)
+            tlsconf.ClientAuth = clientAuth
+            // NewTLSConfigs only sets RootCAs, so we need to let ClientCAs refer to it.
+            tlsconf.ClientCAs = tlsconf.RootCAs
+            config.TLSConfig = tlsconf
 		}
 	}
 	return nil
