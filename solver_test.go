@@ -37,18 +37,30 @@ func TestSolveChallenge(t *testing.T) {
 	testcases := []struct {
 		name     string
 		question string
+        answer bool
 	}{
 		{
 			name:     "ACME Challenge",
 			question: "_acme-challenge.example.com.",
+            answer: true,
+		},
+		{
+			name:     "ACME Challenge on a subdomain",
+			question: "_acme-challenge.sub.example.com.",
+            answer: true,
+		},
+		{
+			name:     "Not an ACME request",
+			question: "fail.example.com.",
+            answer: false,
 		},
 	}
 	readyChan := make(chan string)
 	setupACME(readyChan)
+    ready := <-readyChan
+    fmt.Println(ready)
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			ready := <-readyChan
-			fmt.Println(ready)
 
 			m := new(dns.Msg)
 			m.SetQuestion(tc.question, dns.TypeTXT)
@@ -56,9 +68,15 @@ func TestSolveChallenge(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Expected to receive reply, but didn't: %v", err)
 			}
-			if len(resp.Answer) == 0 {
-				t.Fatalf("Expected to at least one RR in the answer section, got none")
-			}
+            if tc.answer {
+                if len(resp.Answer) == 0 {
+                    t.Fatalf("Expected to receive at least one RR in the answer section, got none")
+                }
+            } else {
+                if len(resp.Answer) != 0 {
+                    t.Fatalf("Expected to receive no RR in the answer section, got at least one")
+                }
+            }
 
 		})
 	}
